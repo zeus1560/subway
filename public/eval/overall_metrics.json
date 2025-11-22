@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "mae": 6675.49,
+    "rmse": 15426.45,
+    "levelAccuracy": 98.9,
+    "totalSamples": 1000
+  },
+  "enhanced": {
+    "mae": 6594.77,
+    "rmse": 14994.65,
+    "levelAccuracy": 94.1,
+    "totalSamples": 1000
+  },
+  "splitDate": "20241101",
+  "testSamples": 1000
+}

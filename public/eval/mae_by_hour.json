@@ -1,0 +1,362 @@
+[
+  {
+    "hour": 0,
+    "baseline": {
+      "mae": 587.72,
+      "rmse": 1165.76,
+      "levelAccuracy": 85.37,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 456.78,
+      "rmse": 822.49,
+      "levelAccuracy": 78.05,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 1,
+    "baseline": {
+      "mae": 2.95,
+      "rmse": 4.61,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 285.24,
+      "rmse": 475.39,
+      "levelAccuracy": 68.29,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 2,
+    "baseline": {
+      "mae": 0.18,
+      "rmse": 0.36,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 2.27,
+      "rmse": 3.79,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 3,
+    "baseline": {
+      "mae": 0,
+      "rmse": 0.01,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 45.12,
+      "rmse": 117.33,
+      "levelAccuracy": 95.12,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 4,
+    "baseline": {
+      "mae": 61.88,
+      "rmse": 129.12,
+      "levelAccuracy": 92.86,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 1258.62,
+      "rmse": 1797.53,
+      "levelAccuracy": 21.43,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 5,
+    "baseline": {
+      "mae": 1648.12,
+      "rmse": 2536.31,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 1040.62,
+      "rmse": 1677.31,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 6,
+    "baseline": {
+      "mae": 2806.93,
+      "rmse": 5087.79,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 4771.38,
+      "rmse": 7668.24,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 7,
+    "baseline": {
+      "mae": 8072.1,
+      "rmse": 15595.45,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 6878.55,
+      "rmse": 14275.55,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 8,
+    "baseline": {
+      "mae": 11788.34,
+      "rmse": 23764.13,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 8275.24,
+      "rmse": 20127.59,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 9,
+    "baseline": {
+      "mae": 6759.93,
+      "rmse": 14697.32,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 7446.81,
+      "rmse": 15350.24,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 10,
+    "baseline": {
+      "mae": 4260.56,
+      "rmse": 11499.15,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 4852.33,
+      "rmse": 11864.46,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 11,
+    "baseline": {
+      "mae": 4351.89,
+      "rmse": 10975.9,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 4438.9,
+      "rmse": 11100.63,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 12,
+    "baseline": {
+      "mae": 5070.81,
+      "rmse": 12711.32,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 5157.31,
+      "rmse": 12844.84,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 13,
+    "baseline": {
+      "mae": 6314.76,
+      "rmse": 12864.11,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 6096.4,
+      "rmse": 12744.51,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 14,
+    "baseline": {
+      "mae": 6436.61,
+      "rmse": 13131.39,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 6555.4,
+      "rmse": 12905.28,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 15,
+    "baseline": {
+      "mae": 7433.86,
+      "rmse": 15373.01,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 7469.33,
+      "rmse": 15519.69,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 16,
+    "baseline": {
+      "mae": 8811.83,
+      "rmse": 19387.73,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 8608.6,
+      "rmse": 19015.42,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 17,
+    "baseline": {
+      "mae": 12059.94,
+      "rmse": 26813.75,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 11251.64,
+      "rmse": 25755.19,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 18,
+    "baseline": {
+      "mae": 19839.12,
+      "rmse": 30390.15,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 15611.33,
+      "rmse": 27504.14,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 19,
+    "baseline": {
+      "mae": 13797.94,
+      "rmse": 21059.68,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    },
+    "enhanced": {
+      "mae": 17064.36,
+      "rmse": 23928.51,
+      "levelAccuracy": 100,
+      "totalSamples": 42
+    }
+  },
+  {
+    "hour": 20,
+    "baseline": {
+      "mae": 10091.79,
+      "rmse": 17288.18,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 11661.59,
+      "rmse": 18688.62,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 21,
+    "baseline": {
+      "mae": 12677.52,
+      "rmse": 20166.02,
+      "levelAccuracy": 97.56,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 11071.63,
+      "rmse": 18295.82,
+      "levelAccuracy": 97.56,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 22,
+    "baseline": {
+      "mae": 11928.03,
+      "rmse": 20108.58,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 9594.61,
+      "rmse": 15835.41,
+      "levelAccuracy": 100,
+      "totalSamples": 41
+    }
+  },
+  {
+    "hour": 23,
+    "baseline": {
+      "mae": 5098.95,
+      "rmse": 8736.85,
+      "levelAccuracy": 97.56,
+      "totalSamples": 41
+    },
+    "enhanced": {
+      "mae": 8105.76,
+      "rmse": 13494.25,
+      "levelAccuracy": 97.56,
+      "totalSamples": 41
+    }
+  }
+]

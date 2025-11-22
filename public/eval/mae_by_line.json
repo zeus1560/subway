@@ -1,0 +1,32 @@
+[
+  {
+    "line": "1",
+    "baseline": {
+      "mae": 8244.07,
+      "rmse": 21016.42,
+      "levelAccuracy": 98.75,
+      "totalSamples": 240
+    },
+    "enhanced": {
+      "mae": 8331.59,
+      "rmse": 21209.43,
+      "levelAccuracy": 94.17,
+      "totalSamples": 240
+    }
+  },
+  {
+    "line": "2",
+    "baseline": {
+      "mae": 6180.15,
+      "rmse": 13177.42,
+      "levelAccuracy": 98.95,
+      "totalSamples": 760
+    },
+    "enhanced": {
+      "mae": 6046.3,
+      "rmse": 12401.08,
+      "levelAccuracy": 94.08,
+      "totalSamples": 760
+    }
+  }
+]

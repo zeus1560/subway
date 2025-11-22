@@ -1,0 +1,3 @@
+line,baseline_mae,baseline_rmse,baseline_accuracy,enhanced_mae,enhanced_rmse,enhanced_accuracy
+1,8244.07,21016.42,98.75,8331.59,21209.43,94.17
+2,6180.15,13177.42,98.95,6046.3,12401.08,94.08
