@@ -5,6 +5,7 @@ import { ZoomIn, ZoomOut, RotateCcw, X, Clock, MapPin, Train } from 'lucide-reac
 import { STATION_DATA, Station, getStationsByLine } from '@/lib/stationData';
 import { getStationCongestion, calculateCongestionLevel, predictCongestion } from '@/lib/api';
 import { getLineColor } from '@/lib/utils';
+import { ALL_LINE_IDS } from '@/lib/subwayMapData';
 
 interface MapProps {
   selectedLine?: string;
@@ -35,7 +36,7 @@ function createSchematicLayout(stations: Station[]): LayoutStation[] {
   const stationMap = new Map<string, LayoutStation>();
   
   // 노선별로 그룹화
-  const lines = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const lines = ALL_LINE_IDS;
   const lineGroups = new Map<string, Station[]>();
   
   lines.forEach(lineNum => {
@@ -322,7 +323,7 @@ export default function SchematicSubwayMap({ selectedLine, onStationSelect }: Ma
   // 노선별 정렬된 역 목록
   const lineStationsMap = useMemo(() => {
     const map = new Map<string, LayoutStation[]>();
-    const lines = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const lines = ALL_LINE_IDS;
     
     lines.forEach(lineNum => {
       const lineStations = layoutStations.filter(s => s.lineNum === lineNum);
@@ -378,7 +379,8 @@ export default function SchematicSubwayMap({ selectedLine, onStationSelect }: Ma
 
   // PC 마우스 이벤트
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
+    // preventDefault 제거: passive 이벤트 리스너 경고 방지
+    // 줌 기능은 유지하되 기본 스크롤도 허용
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     handleZoom(delta);
   }, [handleZoom]);

@@ -375,7 +375,8 @@ export default function CleanSubwayMap({ selectedLine }: MapProps) {
 
   // PC 마우스 휠 줌
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
+    // preventDefault 제거: passive 이벤트 리스너 경고 방지
+    // 줌 기능은 유지하되 기본 스크롤도 허용
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     handleZoom(delta);
   }, [handleZoom]);

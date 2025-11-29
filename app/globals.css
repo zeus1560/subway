@@ -14,14 +14,137 @@
   --background-end-rgb: 30, 30, 30;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer base {
+  body {
+    @apply bg-background text-text-strong;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  }
+}
+
+@layer components {
+  /* 공통 카드 */
+  .card {
+    @apply bg-background-elevated border border-border-subtle rounded-card shadow-subtle;
+  }
+
+  .card-soft {
+    @apply bg-background-soft border border-border-subtle rounded-card shadow-soft;
+  }
+
+  /* 섹션 컨테이너 */
+  .section-container {
+    @apply max-w-6xl mx-auto px-4 md:px-6 lg:px-8;
+  }
+
+  .section-spacing {
+    @apply space-y-xl; /* 섹션 간 기본 간격 */
+  }
+
+  /* 제목 계층 */
+  .heading-1 {
+    @apply text-title-1 text-text-strong;
+  }
+
+  .heading-2 {
+    @apply text-title-2 text-text-strong;
+  }
+
+  .body-main {
+    @apply text-body-1 text-text-strong;
+  }
+
+  .body-muted {
+    @apply text-body-2 text-text-muted;
+  }
+
+  .caption-muted {
+    @apply text-caption text-text-subtle;
+  }
+
+  /* Primary 버튼 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-pill
+      bg-brand-primary text-white text-sm font-medium
+      transition-colors duration-normal ease-soft
+      hover:bg-brand-primarySoft disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary 버튼 */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-pill
+      border border-border-subtle text-text-strong text-sm font-medium
+      bg-transparent
+      transition-colors duration-normal ease-soft
+      hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* 탭/칩 */
+  .chip {
+    @apply inline-flex items-center px-3 py-1 rounded-pill text-xs font-medium
+      bg-white/5 text-text-muted hover:bg-white/10 transition duration-fast ease-soft;
+  }
+
+  .chip-active {
+    @apply bg-brand-primary text-white;
+  }
+
+  /* 혼잡도 레벨 배지 */
+  .badge-congestion-free {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-medium
+      bg-congestion-free/10 text-congestion-free;
+  }
+
+  .badge-congestion-normal {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-medium
+      bg-congestion-normal/10 text-congestion-normal;
+  }
+
+  .badge-congestion-caution {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-medium
+      bg-congestion-caution/10 text-congestion-caution;
+  }
+
+  .badge-congestion-crowded {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-medium
+      bg-congestion-crowded/10 text-congestion-crowded;
+  }
+
+  /* 노선 배지 */
+  .badge-line-1 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-1 text-white;
+  }
+
+  .badge-line-2 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-2 text-white;
+  }
+
+  .badge-line-3 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-3 text-white;
+  }
+
+  .badge-line-4 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-4 text-white;
+  }
+
+  .badge-line-5 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-5 text-white;
+  }
+
+  .badge-line-6 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-6 text-white;
+  }
+
+  .badge-line-7 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-7 text-white;
+  }
+
+  .badge-line-8 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-8 text-white;
+  }
+
+  .badge-line-9 {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5 text-[11px] font-semibold bg-line-9 text-white;
+  }
 }
 
 @layer utilities {
@@ -122,3 +245,11 @@ body {
   display: none;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -157,8 +157,8 @@ export default function InteractiveSubwayMap({
     scale = Math.max(MIN_SCALE, Math.min(scale, MAX_SCALE));
     
     // viewBox 좌표를 픽셀 좌표로 변환
-    const centerXPixel = (centerX - viewBoxConfig.minX) * viewBoxToPixelX;
-    const centerYPixel = (centerY - viewBoxConfig.minY) * viewBoxToPixelY;
+    const centerXPixel = (centerX - (viewBoxConfig.minX ?? 0)) * viewBoxToPixelX;
+    const centerYPixel = (centerY - (viewBoxConfig.minY ?? 0)) * viewBoxToPixelY;
     
     // 스케일된 좌표계에서의 중앙 계산
     const scaledCenterX = centerXPixel * scale;
@@ -304,7 +304,8 @@ export default function InteractiveSubwayMap({
 
   // PC 마우스 이벤트 (개선된 버전)
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
+    // preventDefault 제거: passive 이벤트 리스너 경고 방지
+    // 줌 기능은 유지하되 기본 스크롤도 허용
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     handleZoom(delta);
   }, [handleZoom]);
@@ -623,7 +624,7 @@ export default function InteractiveSubwayMap({
       let hasCollision = false;
 
       // 기존 라벨들과 충돌 검사
-      for (const [otherStationId, otherLabelPos] of existingLabels.entries()) {
+      for (const [otherStationId, otherLabelPos] of Array.from(existingLabels.entries())) {
         const otherStation = visibleStationsWithLabels.find(s => s.id === otherStationId);
         if (!otherStation) continue;
 
@@ -884,7 +885,7 @@ export default function InteractiveSubwayMap({
                     <text
                       x={labelPos.x}
                       y={labelPos.y + 5}
-                      textAnchor={labelPos.anchor}
+                      textAnchor={labelPos.anchor as "start" | "end" | "middle" | "inherit" | undefined}
                       fontSize={station.isTransfer ? 16 : 14}
                       fontWeight={isSelected ? 'bold' : (station.isTransfer ? 'bold' : '600')}
                       fill={isSelected ? primaryColor : "#1f2937"}

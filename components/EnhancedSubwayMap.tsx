@@ -131,6 +131,15 @@ export default function EnhancedSubwayMap({
   // 전체보기 모드: 모든 노선을 동시에 표시
   const [showAllLines, setShowAllLines] = useState(false);
 
+  // selectedLine prop이 변경되면 activeLine 업데이트
+  useEffect(() => {
+    if (selectedLine && selectedLine !== activeLine) {
+      setActiveLine(selectedLine as LineId);
+      setViewMode('full');
+      setLocalViewStation(null);
+    }
+  }, [selectedLine, activeLine]);
+
   // 노선 선택 핸들러
   const handleLineSelect = useCallback(
     (line: LineId) => {
@@ -820,7 +829,7 @@ export default function EnhancedSubwayMap({
   );
 
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.MouseEvent | MouseEvent) => {
     if (isDragging) {
         if (clickStartPos) {
           const dx = Math.abs(e.clientX - clickStartPos.x);
@@ -842,10 +851,31 @@ export default function EnhancedSubwayMap({
     setIsDragging(false);
   }, []);
 
+  // 전역 마우스 이벤트 리스너 (드래그 중 컴포넌트 밖에서도 추적)
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        handleMouseMove(e);
+      };
+      const handleGlobalMouseUp = () => {
+        handleMouseUp();
+      };
+      
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleGlobalMouseMove);
+        window.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   // 휠 줌
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      e.preventDefault();
+      // preventDefault 제거: passive 이벤트 리스너 경고 방지
+      // 줌 기능은 유지하되 기본 스크롤도 허용
       const delta = e.deltaY > 0 ? -0.15 : 0.15;
       handleZoom(delta);
     },
@@ -927,8 +957,8 @@ export default function EnhancedSubwayMap({
               x2={to.layoutX}
               y2={to.layoutY}
               stroke={lineColor}
-              strokeWidth={6}
-              opacity={0.8}
+              strokeWidth={7}
+              opacity={0.85}
             />,
           );
         }
@@ -1108,8 +1138,8 @@ export default function EnhancedSubwayMap({
               x2={to.layoutX}
               y2={to.layoutY}
               stroke={lineColor}
-              strokeWidth={6}
-              opacity={0.8}
+              strokeWidth={7}
+              opacity={0.85}
             />,
           );
         }
@@ -1229,15 +1259,16 @@ export default function EnhancedSubwayMap({
           <circle
             cx={station.layoutX}
             cy={station.layoutY}
-            r={clickRadius}
+            r={isSelected ? 5 : 4}
             fill={isSelected ? lineColor : isHovered ? lineColor : 'white'}
-            stroke={lineColor}
-            strokeWidth={isSelected ? 4 : isHovered ? 3 : 2}
+            stroke={isSelected ? 'white' : lineColor}
+            strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 1}
             className="cursor-pointer transition-all duration-200"
             onClick={(e) => handleStationClick(station, e)}
             onMouseEnter={() => setHoveredStation(station.id)}
             onMouseLeave={() => setHoveredStation(null)}
             style={{
+              opacity: isSelected ? 1 : isHovered ? 0.9 : 0.65,
               filter: isSelected ? 'drop-shadow(0 0 8px rgba(0,0,0,0.3))' : undefined,
             }}
           />
@@ -1296,14 +1327,15 @@ export default function EnhancedSubwayMap({
                   <>
                     <text
                       x={labelPos.x}
-                      y={labelPos.y + fontSize / 3}
+                      y={labelPos.y + 13 / 3}
                       textAnchor="middle"
-                      fontSize={fontSize}
-                      fontWeight={isSelected ? 'bold' : station.isTransfer ? 'bold' : '600'}
-                      fill="white"
+                      fontSize={13}
+                      fontWeight={isSelected ? 'bold' : station.isTransfer ? '600' : '500'}
+                      fill={isSelected ? '#F9FAFB' : '#E5E7EB'}
                       className="pointer-events-none"
                       dominantBaseline="middle"
                       style={{
+                        opacity: isSelected ? 1 : 0.7,
                         textShadow: '0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)',
                       }}
                     >
@@ -1360,14 +1392,15 @@ export default function EnhancedSubwayMap({
                 <>
                   <text
                     x={labelInfo.x}
-                    y={labelInfo.y + 18 / 3}
+                    y={labelInfo.y + 13 / 3}
                     textAnchor="middle"
-                    fontSize={18}
-                    fontWeight={isSelected ? 'bold' : station.isTransfer ? 'bold' : '600'}
-                    fill="white"
+                    fontSize={13}
+                    fontWeight={isSelected ? 'bold' : station.isTransfer ? '600' : '500'}
+                    fill={isSelected ? '#F9FAFB' : '#E5E7EB'}
                     className="pointer-events-none"
                     dominantBaseline="middle"
                     style={{
+                      opacity: isSelected ? 1 : 0.7,
                       textShadow: '0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)',
                     }}
                   >
@@ -1405,51 +1438,14 @@ export default function EnhancedSubwayMap({
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full bg-[#f5f7fb] dark:bg-gray-950 rounded-lg overflow-hidden"
+      className="relative w-full h-full bg-[#020617] rounded-lg"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* 노선 탭 */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex gap-2 overflow-x-auto pb-2">
-        {/* 전체보기 버튼 */}
-        <button
-          onClick={() => {
-            setShowAllLines(!showAllLines);
-            if (!showAllLines) {
-              setActiveLine('1' as LineId);
-            }
-          }}
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
-            showAllLines
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md scale-105'
-              : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 shadow-sm'
-          }`}
-        >
-          {showAllLines ? '전체보기 ON' : '전체보기'}
-        </button>
-        {LINES.map((line) => (
-          <button
-            key={line.id}
-            onClick={() => {
-              setShowAllLines(false);
-              handleLineSelect(line.id);
-            }}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
-              activeLine === line.id && !showAllLines
-                ? 'text-white shadow-md scale-105'
-                : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 shadow-sm'
-            }`}
-            style={{
-              backgroundColor: activeLine === line.id && !showAllLines ? line.color : undefined,
-            }}
-          >
-            {line.name}
-          </button>
-        ))}
-      </div>
+      {/* 노선 탭은 좌측 패널로 이동됨 */}
 
       {/* 2호선 전용 컨트롤 */}
       {activeLine === '2' && (
@@ -1593,53 +1589,30 @@ export default function EnhancedSubwayMap({
         </div>
       )}
 
-      {/* 줌 컨트롤 */}
-      <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg">
-        <button
-          onClick={() => handleZoom(0.2)}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label="확대"
-        >
-          <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-        </button>
-        <button
-          onClick={() => handleZoom(-0.2)}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label="축소"
-        >
-          <ZoomOut className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-        </button>
-        <button
-          onClick={handleReset}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label="리셋"
-        >
-          <RotateCcw className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-        </button>
-      </div>
+      {/* 줌 컨트롤은 외부 컴포넌트로 이동됨 */}
 
       {/* 🔥 pan/zoom 분리된 SVG 영역 */}
       <div className="w-full h-full overflow-hidden">
         {/* pan 전용 래퍼 */}
-      <div
+        <div
           className="w-full h-full transition-transform duration-200 ease-out"
-        style={{
+          style={{
             transform: `translate(${pan.x}px, ${pan.y}px)`,
-          transformOrigin: 'center center',
-        }}
-      >
+            transformOrigin: 'center center',
+          }}
+        >
           {/* zoom 전용 */}
-        <svg
-          ref={svgRef}
+          <svg
+            ref={svgRef}
             viewBox={`${viewBoxData.minX} ${viewBoxData.minY} ${viewBoxData.width} ${viewBoxData.height}`}
-          className="w-full h-full"
-          preserveAspectRatio="xMidYMid meet"
+            className="w-full h-full"
+            preserveAspectRatio="xMidYMid meet"
             style={{
               transform: `scale(${zoom})`,
               transformOrigin: 'center center',
             }}
-        >
-          {renderLines()}
+          >
+            {renderLines()}
             {renderStations()}
           </svg>
         </div>
