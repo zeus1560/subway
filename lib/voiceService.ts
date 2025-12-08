@@ -8,7 +8,7 @@ export interface VoiceCommand {
 }
 
 // 음성 명령 인식 (간단한 키워드 기반)
-export const recognizeVoiceCommand = (text: string): VoiceCommand | null => {
+export function recognizeVoiceCommand(text: string): VoiceCommand | null {
   // 공백 제거 및 소문자 변환
   const normalizedText = text.replace(/\s+/g, '').toLowerCase();
   const lowerText = text.toLowerCase();
@@ -19,7 +19,7 @@ export const recognizeVoiceCommand = (text: string): VoiceCommand | null => {
     
     // 역명 패턴 (더 많은 역 지원)
     const stationPatterns = [
-      /(강남|홍대|명동|서울역|시청|종로|을지로|사당|역삼|선릉|건대|고속터미널|이태원|잠실|동대문|왕십리|교대|약수|충무로|안국|경복궁|독립문|홍제|무악재|불광|연신내|구파발|지축|삼송|원흥|원당|화정|대곡|백석|마두|정발산|주엽|대화|성수|삼성|방배|서초|잠원|옥수|압구정|신사|동대입구|회현|동대문역사문화공원|신촌|이대|충정로|서대문|광화문|안암|고려대|월곡|상월곡|돌곶이|석계|태릉입구|화랑대|봉화산|신내|갈매|별내|퇴계원|사릉|금곡|평내호평|천마산|마석|대성리|청평|상천|가평|굴봉산|백양리|강촌|김유정|남춘천|춘천|방화|개화산|김포공항|송정|마곡|발산|우장산|화곡|신정|목동|오목교|양평|영등포구청|당산|합정|홍대입구|신촌|이대앞|충정로|서대문|광화문|안국|경복궁|독립문|홍제|무악재|불광|연신내|구파발|지축|삼송|원흥|원당|화정|대곡|백석|마두|정발산|주엽|대화)/;
+      new RegExp('(강남|홍대|명동|서울역|시청|종로|을지로|사당|역삼|선릉|건대|고속터미널|이태원|잠실|동대문|왕십리|교대|약수|충무로|안국|경복궁|독립문|홍제|무악재|불광|연신내|구파발|지축|삼송|원흥|원당|화정|대곡|백석|마두|정발산|주엽|대화|성수|삼성|방배|서초|잠원|옥수|압구정|신사|동대입구|회현|동대문역사문화공원|신촌|이대|충정로|서대문|광화문|안암|고려대|월곡|상월곡|돌곶이|석계|태릉입구|화랑대|봉화산|신내|갈매|별내|퇴계원|사릉|금곡|평내호평|천마산|마석|대성리|청평|상천|가평|굴봉산|백양리|강촌|김유정|남춘천|춘천|방화|개화산|김포공항|송정|마곡|발산|우장산|화곡|신정|목동|오목교|양평|영등포구청|당산|합정|홍대입구|신촌|이대앞|충정로|서대문|광화문|안국|경복궁|독립문|홍제|무악재|불광|연신내|구파발|지축|삼송|원흥|원당|화정|대곡|백석|마두|정발산|주엽|대화)')
     ];
     
     let matchedStation: string | null = null;
@@ -40,6 +40,8 @@ export const recognizeVoiceCommand = (text: string): VoiceCommand | null => {
         line: lineMatch ? lineMatch[1] : '2',
       };
     }
+    // matchedStation이 없으면 null 반환 (혼잡도 키워드는 있지만 역명이 없는 경우)
+    return null;
   }
 
   // 경로 조회 - 더 많은 키워드 지원
@@ -72,8 +74,9 @@ export const recognizeVoiceCommand = (text: string): VoiceCommand | null => {
     };
   }
 
+  // 모든 조건에 맞지 않으면 null 반환
   return null;
-};
+}
 
 // 음성 인식 시작
 export const startVoiceRecognition = (

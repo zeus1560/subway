@@ -206,7 +206,32 @@ async function analyzePostWithAI(post: BoardPost): Promise<{
   confidence: number;
   inappropriate: boolean;
 }> {
-  // 간단한 키워드 기반 분석 (실제로는 OpenAI API 등을 사용)
+  // OpenAI API 사용 시도 (환경 변수 설정 시)
+  try {
+    const { analyzePostWithOpenAI } = await import('./openaiService');
+    const aiResult = await analyzePostWithOpenAI(post.title, post.content);
+    
+    // 기본 태그 추가 (역명, 노선 등)
+    const tags = [...aiResult.tags];
+    if (post.stationName && !tags.includes(post.stationName)) {
+      tags.push(post.stationName);
+    }
+    if (post.lineNum && !tags.some(t => t.includes(post.lineNum))) {
+      tags.push(`${post.lineNum}호선`);
+    }
+
+    return {
+      summary: aiResult.summary,
+      tags: Array.from(new Set(tags)),
+      confidence: aiResult.confidence,
+      inappropriate: aiResult.inappropriate,
+    };
+  } catch (error) {
+    // OpenAI API 실패 시 기존 휴리스틱 방식 사용
+    console.warn('OpenAI API 사용 실패, 휴리스틱 방식으로 대체:', error);
+  }
+
+  // 기존 키워드 기반 분석 (폴백)
   const content = `${post.title} ${post.content}`.toLowerCase();
   
   // 부적절한 키워드 체크
@@ -236,7 +261,7 @@ async function analyzePostWithAI(post: BoardPost): Promise<{
 
   return {
     summary,
-    tags: [...new Set(tags)],
+    tags: Array.from(new Set(tags)),
     confidence: Math.min(confidence, 1.0),
     inappropriate,
   };

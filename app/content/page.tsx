@@ -64,10 +64,10 @@ export default function ContentPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="w-6 h-6 text-purple-500" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI 콘텐츠 생성</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">AI 콘텐츠 생성</h1>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             AI가 자동으로 생성한 다양한 콘텐츠
@@ -75,7 +75,7 @@ export default function ContentPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         <div className="space-y-6">
           {/* 혼잡 피하기 노하우 */}
           {tips && (
@@ -118,14 +118,14 @@ export default function ContentPage() {
 
 function ContentCard({ content, onDownload }: { content: any; onDownload: () => void }) {
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 first:mt-0 mt-6">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
             <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{content.title}</h2>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">{content.title}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">AI 자동 생성</p>
           </div>
         </div>

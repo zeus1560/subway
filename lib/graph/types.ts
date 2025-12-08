@@ -47,6 +47,9 @@ export interface RouteResult {
       durationMinutes: number;      // 구간 소요 시간 (분) - 명시적 필드
       congestion: number;            // 구간 혼잡도 (1~4)
       isTransfer: boolean;
+      stationCount?: number;         // 역 개수 (from~to 포함)
+      stations?: string[];           // 구간 내 모든 역 이름 배열
+      stationIds?: string[];         // 구간 내 모든 역 ID 배열
     }>;
   };
 }

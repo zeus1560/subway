@@ -178,10 +178,10 @@ function predictBaseline(
 }
 
 // Enhanced 모델 예측 (predictCongestionEnhanced 사용)
-function predictEnhanced(
+async function predictEnhanced(
   record: RawRecord,
   trainData: RawRecord[]
-): number {
+): Promise<number> {
   // 해당 역의 과거 데이터 수집
   const historicalData: HistoricalData[] = trainData
     .filter(r => r.stationName === record.stationName && r.lineNum === record.lineNum)
@@ -233,20 +233,20 @@ function predictEnhanced(
     Math.abs(r.hour - record.hour) <= 1 // ±1시간 이내
   );
   
-  const currentData = {
-    passengerCount: similarTimeData.length > 0
-      ? Math.round(similarTimeData.reduce((sum, r) => sum + r.passengerCount, 0) / similarTimeData.length)
-      : (sameTimeData.length > 0
-          ? Math.round(sameTimeData.reduce((sum, r) => sum + r.passengerCount, 0) / sameTimeData.length)
-          : record.passengerCount), // 폴백: 실제 값 사용
-    timestamp: record.timestamp,
-  };
+  const currentPassengerCount = similarTimeData.length > 0
+    ? Math.round(similarTimeData.reduce((sum, r) => sum + r.passengerCount, 0) / similarTimeData.length)
+    : (sameTimeData.length > 0
+        ? Math.round(sameTimeData.reduce((sum, r) => sum + r.passengerCount, 0) / sameTimeData.length)
+        : record.passengerCount); // 폴백: 실제 값 사용
   
-  const prediction = predictCongestionEnhanced(
-    currentData,
-    historicalData,
+  const stationId = `${record.lineNum}_${record.stationName}`;
+  
+  const prediction = await predictCongestionEnhanced(
+    stationId,
+    record.stationName,
+    record.lineNum,
     record.timestamp,
-    baseline
+    currentPassengerCount
   );
   
   return prediction.predictedPassengerCount;
@@ -402,7 +402,7 @@ async function evaluateModel() {
     
     // Enhanced 예측
     try {
-      const enhancedPred = predictEnhanced(record, train);
+      const enhancedPred = await predictEnhanced(record, train);
       enhancedPredictions.push(enhancedPred);
     } catch (error) {
       console.warn(`Enhanced 예측 실패 (${record.stationName}):`, error);

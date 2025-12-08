@@ -31,6 +31,7 @@ cd station1
 ### 2. Install dependencies
 
 **필수 요구사항:**
+
 - Node.js 18 이상
 - npm 또는 yarn
 
@@ -57,6 +58,7 @@ NEXT_PUBLIC_NAVER_CLIENT_SECRET=your_naver_client_secret_here
 **API 키 발급 방법:**
 
 1. **서울시 공공데이터 API 키:**
+
    - 서울시 공공데이터포털 (https://data.seoul.go.kr) 접속
    - 회원가입 및 로그인
    - "CardSubwayStatsNew" API 신청
@@ -68,7 +70,7 @@ NEXT_PUBLIC_NAVER_CLIENT_SECRET=your_naver_client_secret_here
    - 발급받은 Client ID와 Secret을 `.env.local` 파일에 입력
 
 > ⚠️ **주의**: `.env.local` 파일은 Git에 커밋하지 마세요. 이 파일은 `.gitignore`에 포함되어 있습니다.
-> 
+>
 > `.env.example` 파일을 참고하여 필요한 환경 변수를 설정하세요.
 
 ### 4. Run the project
@@ -99,12 +101,14 @@ npm start
 **자주 발생하는 에러:**
 
 1. **포트 4000이 이미 사용 중인 경우:**
+
    ```bash
    # 다른 포트로 실행
    npx next dev -p 3000
    ```
 
 2. **의존성 설치 오류:**
+
    ```bash
    # node_modules 삭제 후 재설치
    rm -rf node_modules package-lock.json
@@ -112,17 +116,42 @@ npm start
    ```
 
 3. **빌드 오류:**
+
    ```bash
    # 캐시 삭제 후 재빌드
    rm -rf .next
    npm run build
    ```
 
-4. **CSV 파일을 찾을 수 없는 경우:**
+4. **변경사항이 UI에 반영되지 않을 때 (캐시 문제):**
+
+   Next.js 개발 서버의 캐시 문제로 코드 변경이 UI에 반영되지 않을 수 있습니다.
+   다음 순서로 해결하세요:
+
+   ```bash
+   # 1) dev 서버 종료
+   # 터미널에서 Ctrl + C
+
+   # 2) .next 캐시 삭제
+   rm -rf .next           # macOS/Linux
+   # 또는
+   rd /s /q .next         # Windows PowerShell
+
+   # 3) 필요시 재설치
+   npm install            # 의존성 문제가 있을 경우만
+
+   # 4) 다시 실행
+   npm run dev
+   ```
+
+   **참고**: `getSubwayGraph()`가 전역 싱글턴이면, 서버 재시작 후에만 새로운 그래프 구조가 반영됩니다.
+
+5. **CSV 파일을 찾을 수 없는 경우:**
+
    - `subway_passengers.csv` 파일이 프로젝트 루트에 있는지 확인하세요.
    - 파일이 없으면 모의 데이터를 사용합니다.
 
-5. **환경 변수 관련 오류:**
+6. **환경 변수 관련 오류:**
    - `.env.local` 파일이 프로젝트 루트에 있는지 확인하세요.
    - 환경 변수 이름이 정확한지 확인하세요 (대소문자 구분).
    - 개발 서버를 재시작하세요.
@@ -171,6 +200,7 @@ station1/
 ## 필수 파일
 
 프로젝트 실행에 필요한 파일:
+
 - `subway_passengers.csv`: 지하철 승객 데이터 (프로젝트 루트에 위치)
 - `.env.local`: 환경 변수 파일 (`.env.example` 참고하여 생성)
 
@@ -240,28 +270,33 @@ npm run evaluate
 다음 단계를 따라하면 아무것도 설치되지 않은 새 컴퓨터에서도 동일하게 실행됩니다:
 
 1. **저장소 클론**
+
    ```bash
    git clone <repository-url>
    cd station1
    ```
 
 2. **Node.js 설치 확인** (18 이상 필요)
+
    ```bash
    node --version
    ```
 
 3. **의존성 설치**
+
    ```bash
    npm install
    ```
 
 4. **환경 변수 설정**
+
    ```bash
    cp .env.example .env.local
    # .env.local 파일을 열어 API 키 입력
    ```
 
 5. **개발 서버 실행**
+
    ```bash
    npm run dev
    ```

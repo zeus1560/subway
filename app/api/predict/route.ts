@@ -52,23 +52,22 @@ export async function POST(request: NextRequest) {
     });
 
     // 현재 승객 수 (제공되지 않으면 기본값 사용)
-    const currentData = {
-      passengerCount: currentPassengerCount || 500,
-      timestamp: now,
-    };
+    const currentPassengerCountValue = currentPassengerCount || 500;
 
     // 고급 예측 함수 호출
-    const prediction = predictCongestionEnhanced(
-      currentData,
-      historicalData,
+    const prediction = await predictCongestionEnhanced(
+      stationId,
+      stationName,
+      lineNum,
       now,
-      baseline
+      currentPassengerCountValue
     );
 
     logger.info('예측 완료', {
       stationId,
       predictedPassengerCount: prediction.predictedPassengerCount,
-      confidence: prediction.predictionConfidence,
+      congestion: prediction.congestion,
+      level: prediction.level,
     });
 
     return NextResponse.json({
@@ -78,14 +77,14 @@ export async function POST(request: NextRequest) {
         stationName,
         lineNum,
         current: {
-          passengerCount: currentData.passengerCount,
+          passengerCount: currentPassengerCountValue,
           timestamp: now.toISOString(),
         },
         predicted: {
           passengerCount: prediction.predictedPassengerCount,
-          congestionLevel: prediction.predictedCongestionLevel,
-          confidence: prediction.predictionConfidence,
-          timestamp: prediction.predictedTimestamp?.toISOString() || now.toISOString(),
+          congestionLevel: prediction.congestion,
+          level: prediction.level,
+          timestamp: now.toISOString(),
         },
         baseline: baseline ? {
           averagePassengerCount: baseline.averagePassengerCount,

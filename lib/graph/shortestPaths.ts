@@ -1,7 +1,7 @@
 // 최단 경로 알고리즘 (Dijkstra, Yen's K-Shortest Paths)
 
 import { SubwayGraph, GraphNode, GraphEdge, RouteResult, RouteSearchOptions } from './types';
-import { STATIONS, getStationById } from '../subwayMapData';
+import { STATIONS, getStationById, LineId } from '../subwayMapData';
 import { calculateEdgeCostWithCongestion, calculateRouteCongestionScore, calculateEdgeCostFast, calculateRouteCongestionScoreFromSegments } from './crowdingWeight';
 import { logger } from '../logger';
 
@@ -334,7 +334,15 @@ async function buildRouteResult(
   const fare = calculateFare(pathNode.path.length - 1, pathNode.transfers);
   
   // 구간별 상세 정보 (배치로 혼잡도 조회)
-  const perSegment = [];
+  const perSegment: Array<{
+    from: string;
+    to: string;
+    line: LineId;
+    travelTime: number;
+    durationMinutes?: number;
+    congestion: number;
+    isTransfer: boolean;
+  }> = [];
   const congestionPromises: Array<Promise<{ level: number }>> = [];
   
   // edges가 비어있으면 path 기반으로 perSegment 생성
@@ -347,9 +355,9 @@ async function buildRouteResult(
       const toName = toStation?.name || pathNode.path[i + 1];
       
       // 공통 노선 찾기
-      const commonLine = fromStation && toStation 
+      const commonLine: LineId = (fromStation && toStation 
         ? fromStation.lines.find(l => toStation.lines.includes(l)) || fromStation.lines[0] || '1'
-        : '1';
+        : '1') as LineId;
       
       // 환승 여부 확인 (같은 역 이름이지만 다른 ID인 경우)
       const isTransfer = fromStation && toStation && fromStation.name === toStation.name && fromStation.id !== toStation.id;
@@ -362,7 +370,7 @@ async function buildRouteResult(
         travelTime: defaultTime, // 환승은 4분, 일반은 2분
         durationMinutes: defaultTime, // 명시적으로 추가
         congestion: 2,
-        isTransfer: isTransfer,
+        isTransfer: isTransfer ?? false,
       });
     }
   } else {
@@ -390,10 +398,10 @@ async function buildRouteResult(
         
         if (!fromStation || !toStation) {
           // 역을 찾을 수 없어도 기본 정보는 추가
-          perSegment.push({
-            from: edge.from,
-            to: edge.to,
-            line: edge.line,
+        perSegment.push({
+          from: edge.from,
+          to: edge.to,
+          line: edge.line as LineId,
             travelTime: finalTravelTime,
             durationMinutes: finalTravelTime, // 명시적으로 추가
             congestion: 2, // 기본값: 보통
@@ -421,7 +429,7 @@ async function buildRouteResult(
         perSegment.push({
           from: fromStation.name,
           to: toStation.name,
-          line: edge.line,
+          line: edge.line as LineId,
           travelTime: finalTravelTime,
           durationMinutes: finalTravelTime, // 명시적으로 추가
           congestion: 2, // 임시값, 나중에 업데이트
@@ -522,7 +530,7 @@ async function buildRouteResult(
     transfers: pathNode.transfers,
     congestionScore,
     fare,
-    lines: Array.from(pathNode.lines),
+    lines: Array.from(pathNode.lines) as LineId[],
     detail: {
       perSegment: safePerSegment,
     },
@@ -564,12 +572,12 @@ export async function findKShortestPaths(
   const endNode = graph.nodes.get(endId);
   
   if (!startNode) {
-    logger.error('시작 노드를 찾을 수 없음', { startId });
+    logger.error('시작 노드를 찾을 수 없음', undefined, { startId });
     return [];
   }
   
   if (!endNode) {
-    logger.error('도착 노드를 찾을 수 없음', { endId });
+    logger.error('도착 노드를 찾을 수 없음', undefined, { endId });
     return [];
   }
   

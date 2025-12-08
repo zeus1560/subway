@@ -115,8 +115,8 @@ export default function StationsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">역 검색</h1>
+        <div className="container mx-auto px-6 py-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">역 검색</h1>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -138,23 +138,24 @@ export default function StationsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         {filteredStations.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">검색 결과가 없습니다.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">검색 결과가 없습니다.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-6">
             {filteredStations.map((station, index) =>
-              station.lines.map((line) => {
+              station.lines.map((line, lineIndex) => {
                 const isFavorite = favorites.some(
                   (fav) => fav.stationName === station.name && fav.lineNum === line
                 );
+                const isFirst = index === 0 && lineIndex === 0;
                 return (
                   <div
                     key={`${station.name}_${line}_${index}`}
                     onClick={() => handleStationClick(station.name, line)}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isFirst ? 'first:mt-0' : 'mt-6'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">

@@ -31,6 +31,15 @@
     @apply bg-background-soft border border-border-subtle rounded-card shadow-soft;
   }
 
+  /* bg-bg-* 클래스 지원 */
+  .bg-bg-card {
+    @apply bg-background-elevated;
+  }
+
+  .bg-bg-subtle {
+    @apply bg-background-soft;
+  }
+
   /* 섹션 컨테이너 */
   .section-container {
     @apply max-w-6xl mx-auto px-4 md:px-6 lg:px-8;

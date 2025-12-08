@@ -36,22 +36,23 @@ export default function TipsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">혼잡 피하기 팁</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+        <div className="container mx-auto px-6 py-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">혼잡 피하기 팁</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             스마트하게 지하철 이용하기
           </p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         <div className="space-y-4">
           {tips.map((tip: any, index: number) => {
             const Icon = getIcon(tip.icon);
+            const isFirst = index === 0;
             return (
               <div
                 key={index}
-                className={`bg-white dark:bg-gray-800 border rounded-lg p-5 ${
+                className={`bg-white dark:bg-gray-800 border rounded-lg py-4 px-4 ${isFirst ? 'first:mt-0' : 'mt-6'} ${
                   tip.priority === 'high'
                     ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
                     : 'border-gray-200 dark:border-gray-700'
@@ -73,7 +74,7 @@ export default function TipsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{tip.title}</h3>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">{tip.title}</h3>
                       {tip.priority === 'high' && (
                         <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded">
                           중요
@@ -91,10 +92,10 @@ export default function TipsPage() {
         </div>
 
         {/* 추가 팁 섹션 */}
-        <div className="mt-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl p-6 text-white">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="mt-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl py-4 px-4 text-white">
+          <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="w-6 h-6" />
-            <h2 className="text-xl font-bold">추가 팁</h2>
+            <h2 className="text-base font-semibold">추가 팁</h2>
           </div>
           <ul className="space-y-2 text-sm">
             <li>• 평일 오전 10시~11시, 오후 2시~4시가 가장 덜 혼잡합니다</li>

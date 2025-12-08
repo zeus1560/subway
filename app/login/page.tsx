@@ -64,15 +64,15 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             서울 지하철 혼잡도
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {isSignup ? '회원가입하여 더 많은 기능을 이용하세요' : '로그인하여 더 많은 기능을 이용하세요'}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 shadow-lg">
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
               {error}

@@ -1,10 +1,10 @@
 // 서울 지하철 혼잡도 예측 및 경로 탐색 API
 
 import { logger } from './logger';
-import { getStationByName, getStationById } from './subwayMapData';
-import { getSubwayGraph } from './graph/buildSubwayGraph';
-import { findKShortestPaths } from './graph/shortestPaths';
+import { getStationByName, getStationById, type LineId } from './subwayMapData';
 import { RouteResult as GraphRouteResult } from './graph/types';
+import { findKShortestPaths, type RouteNode } from './routeAlgorithm';
+import { getSubwayGraph } from './graph/buildSubwayGraph';
 
 // API 키 (환경 변수에서 가져오기)
 const API_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || '';
@@ -331,14 +331,230 @@ export async function findLessCrowdedRoute(
   }));
 }
 
-// 새로운 그래프 기반 경로 탐색 함수
+// Section 타입 정의
+type Section = {
+  line: LineId;
+  fromStationId: string;
+  toStationId: string;
+  stationIds: string[];   // 포함된 역 id 리스트 (from~to 포함)
+};
+
+// RouteNode에서 SubwayGraph edge 기반으로 섹션 생성
+function buildSectionsFromRoute(route: RouteNode): Section[] {
+  const graph = getSubwayGraph();
+  const sections: Section[] = [];
+  const path = route.path;
+
+  if (!path || path.length < 2) return sections;
+
+  let current: Section | null = null;
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const fromId = path[i];
+    const toId = path[i + 1];
+
+    const node = graph.nodes.get(fromId);
+    if (!node) continue;
+
+    // fromId -> toId 로 가는 edge 를 찾는다.
+    const edge = node.neighbors.find((e) => e.to === toId);
+    if (!edge) continue;
+
+    const line = edge.line as LineId;
+    const isTransfer = edge.isTransfer === true;
+
+    // 1) 환승 이동인 경우: 현재 섹션만 종료하고, 새 섹션은 만들지 않는다.
+    if (isTransfer) {
+      if (current) {
+        current.toStationId = fromId;
+        // 나중에 필터링하니 일단 push
+        sections.push(current);
+        current = null;
+      }
+      // 환승 이동 구간은 별도 섹션으로 만들지 않는다.
+      continue;
+    }
+
+    // 2) 일반 이동(edge.isTransfer === false)인 경우
+    if (!current || current.line !== line) {
+      // 라인이 바뀌면 이전 섹션을 종료하고 새 섹션 시작
+      if (current) {
+        current.toStationId = fromId;
+        sections.push(current);
+      }
+      current = {
+        line,
+        fromStationId: fromId,
+        toStationId: toId,
+        stationIds: [fromId, toId],
+      };
+    } else {
+      // 같은 라인에서 연속 이동이면 현재 섹션을 확장
+      current.toStationId = toId;
+      if (!current.stationIds.includes(toId)) {
+        current.stationIds.push(toId);
+      }
+    }
+  }
+
+  if (current) {
+    sections.push(current);
+  }
+
+  // 3) 실질적인 이동이 없는 "단일 역 섹션" 제거
+  const filtered = sections.filter((sec) => {
+    if (sec.fromStationId === sec.toStationId) return false;
+    if (!sec.stationIds || sec.stationIds.length < 2) return false;
+    return true;
+  });
+
+  return filtered;
+}
+
+// RouteNode를 GraphRouteResult로 변환하는 헬퍼 함수
+function convertRouteNodeToGraphRouteResult(
+  routeNode: RouteNode | null,
+  type: 'fastest' | 'lessTransfer' | 'lessCrowded'
+): GraphRouteResult | null {
+  if (!routeNode) return null;
+
+  // 전체 경로 역 이름 목록
+  const stations = routeNode.path.map(id => {
+    const station = getStationById(id);
+    return station ? station.name : id;
+  });
+
+  // 섹션 생성
+  const sections = buildSectionsFromRoute(routeNode);
+  const graph = getSubwayGraph();
+
+  const perSegment: Array<{
+    from: string;
+    to: string;
+    line: LineId;
+    travelTime: number;
+    durationMinutes: number;
+    congestion: number;
+    isTransfer: boolean;
+    stations: string[];    // 섹션 내 모든 역 이름
+    stationIds: string[];  // 섹션 내 모든 역 ID
+    stationCount: number;  // 역 개수
+  }> = [];
+
+  for (const section of sections) {
+    const fromStation = getStationById(section.fromStationId);
+    const toStation = getStationById(section.toStationId);
+
+    const fromName = fromStation?.name || section.fromStationId;
+    const toName = toStation?.name || section.toStationId;
+
+    // 섹션에 포함된 역 ID 목록
+    const stationIdsInSection =
+      section.stationIds && section.stationIds.length > 0
+        ? section.stationIds
+        : [section.fromStationId, section.toStationId].filter(Boolean);
+
+    // ID → 이름 변환
+    const stationNamesInSection = stationIdsInSection.map(id => {
+      const st = getStationById(id);
+      return st ? st.name : id;
+    });
+
+    // 섹션 시간 합산
+    let totalTravelTime = 0;
+    for (let i = 0; i < stationIdsInSection.length - 1; i++) {
+      const fromId = stationIdsInSection[i];
+      const toId = stationIdsInSection[i + 1];
+
+      const node = graph.nodes.get(fromId);
+      if (!node) continue;
+
+      const edge = node.neighbors.find(e => e.to === toId);
+      if (edge && !edge.isTransfer) {
+        totalTravelTime += edge.travelTime;
+      }
+    }
+
+    if (totalTravelTime === 0) {
+      totalTravelTime = 2; // 기본 2분
+    }
+
+    perSegment.push({
+      from: fromName,
+      to: toName,
+      line: section.line as LineId,
+      travelTime: totalTravelTime,
+      durationMinutes: totalTravelTime,
+      congestion: 2,
+      isTransfer: false,
+      stations: stationNamesInSection,
+      stationIds: stationIdsInSection,
+      stationCount: stationIdsInSection.length,
+    });
+  }
+
+  // 요금 계산
+  const estimatedDistance = (routeNode.path.length - 1) * 1.2;
+  let fare = 1400;
+  if (estimatedDistance > 10) {
+    const extraDistance = estimatedDistance - 10;
+    const extraFare = Math.ceil(extraDistance / 5) * 100;
+    fare += extraFare;
+  }
+  fare = Math.min(fare, 2000);
+
+  // 사용한 노선 목록 추출
+  const lines = Array.from(
+    new Set(
+      perSegment.map(seg => seg.line).filter(Boolean)
+    )
+  ) as LineId[];
+
+  return {
+    type,
+    stations,
+    stationIds: routeNode.path,
+    travelTime: routeNode.totalTime,
+    totalTravelMinutes: routeNode.totalTime,
+    transfers: routeNode.transferCount,
+    congestionScore: routeNode.totalCongestion,
+    fare,
+    lines,
+    detail: {
+      perSegment,
+    },
+  };
+}
+
+// 새로운 그래프 기반 경로 탐색 함수 (routeAlgorithm.ts 직접 호출)
 export async function findRoutes(
   startStation: string,
   endStation: string,
-  timestamp?: Date
+  timestamp?: Date,
+  options?: {
+    preferLessCrowded?: boolean;
+    preferLessTransfer?: boolean;
+    preferMinTime?: boolean;
+    maxTransfers?: number;
+    maxRoutes?: number;
+  }
 ): Promise<GraphRouteResult[]> {
   try {
-    logger.info('경로 탐색 시작 (그래프 기반)', { startStation, endStation, timestamp });
+    const routeOption = options?.preferMinTime 
+      ? 'minTime' 
+      : options?.preferLessTransfer 
+      ? 'lessTransfer'
+      : options?.preferLessCrowded
+      ? 'lessCrowded'
+      : 'optimal';
+    
+    logger.info('경로 탐색 시작 (routeAlgorithm.ts 직접 호출)', { 
+      startStation, 
+      endStation, 
+      timestamp,
+      routeOption,
+      options,
+    });
     
     // 역 이름을 역 ID로 변환
     const startId = findStationIdByName(startStation);
@@ -361,39 +577,74 @@ export async function findRoutes(
     
     logger.info('역 ID 변환 완료', { startStation, startId, endStation, endId });
     
-    // 그래프 가져오기
-    const graph = getSubwayGraph();
-    
-    // 그래프 유효성 확인
-    if (!graph || !graph.nodes || graph.nodes.size === 0) {
-      logger.error('그래프가 비어있음');
-      return [];
-    }
-    
-    logger.info('그래프 로드 완료', { nodeCount: graph.nodes.size, edgeCount: graph.edges.length });
-    
     // 출발 시간 (없으면 현재 시간)
     const departureTime = timestamp || new Date();
     
-    // K-Shortest Paths 알고리즘으로 3가지 경로 찾기
-    logger.info('경로 탐색 시작', { startId, endId });
-    const routes = await findKShortestPaths(
-      graph,
+    // routeAlgorithm.ts의 findKShortestPaths 직접 호출
+    logger.info('경로 탐색 시작 (routeAlgorithm.ts)', { startId, endId, options });
+    const routeNodes = await findKShortestPaths(
       startId,
       endId,
       departureTime,
-      3, // 최대 3개 경로
+      options?.maxRoutes ?? 3,
       {
-        maxTransfers: 5,
-        maxRoutes: 3,
+        preferLessCrowded: options?.preferLessCrowded,
+        preferLessTransfer: options?.preferLessTransfer,
+        preferMinTime: options?.preferMinTime,
+        maxTransfers: options?.maxTransfers ?? 5,
+        maxRoutes: options?.maxRoutes ?? 3,
       }
     );
+    
+    // RouteNode를 GraphRouteResult로 변환
+    const routes: GraphRouteResult[] = [];
+    
+    for (let i = 0; i < routeNodes.length; i++) {
+      const routeNode = routeNodes[i];
+      let routeType: 'fastest' | 'lessTransfer' | 'lessCrowded' = 'fastest';
+      
+      // 첫 번째 경로는 옵션에 따라 타입 결정
+      if (i === 0) {
+        if (options?.preferMinTime) {
+          routeType = 'fastest';
+        } else if (options?.preferLessTransfer) {
+          routeType = 'lessTransfer';
+        } else if (options?.preferLessCrowded) {
+          routeType = 'lessCrowded';
+        } else {
+          // 기본: 환승이 가장 적은 경로
+          routeType = routeNode.transferCount <= 1 ? 'lessTransfer' : 'fastest';
+        }
+      } else {
+        // 나머지 경로는 환승 수에 따라 타입 결정
+        if (routeNode.transferCount <= 1) {
+          routeType = 'lessTransfer';
+        } else if (routeNode.totalCongestion < 10) {
+          routeType = 'lessCrowded';
+        } else {
+          routeType = 'fastest';
+        }
+      }
+      
+      const converted = convertRouteNodeToGraphRouteResult(routeNode, routeType);
+      if (converted) {
+        routes.push(converted);
+      }
+    }
     
     logger.info('경로 탐색 완료', { 
       routeCount: routes.length,
       startStation,
       endStation,
-      routes: routes.map(r => ({ type: r.type, stations: r.stations.length, time: r.travelTime }))
+      routeOption,
+      routes: routes.map((r, idx) => ({ 
+        순위: idx + 1,
+        type: r.type, 
+        stations: r.stations.length, 
+        time: r.travelTime,
+        transfers: r.transfers,
+        congestion: r.congestionScore,
+      }))
     });
     
     return routes;

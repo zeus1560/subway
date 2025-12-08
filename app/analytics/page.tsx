@@ -140,22 +140,22 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-6 py-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             혼잡도 예측 모델 성능 평가
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Baseline 모델과 Enhanced 모델의 성능을 비교합니다.
           </p>
         </div>
 
         {/* 전체 요약 카드 */}
         {overallMetrics && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 first:mt-0 mt-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Baseline MAE</span>
                 <BarChart3 className="w-5 h-5 text-gray-400" />
               </div>
@@ -163,8 +163,8 @@ export default function AnalyticsPage() {
                 {overallMetrics.baseline.mae.toFixed(2)}
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Enhanced MAE</span>
                 <BarChart3 className="w-5 h-5 text-blue-500" />
               </div>
@@ -172,8 +172,8 @@ export default function AnalyticsPage() {
                 {overallMetrics.enhanced.mae.toFixed(2)}
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">개선율</span>
                 {overallImprovement > 0 ? (
                   <TrendingDown className="w-5 h-5 text-green-500" />
@@ -185,8 +185,8 @@ export default function AnalyticsPage() {
                 {overallImprovement > 0 ? '+' : ''}{overallImprovement.toFixed(1)}%
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">레벨 정확도</span>
                 <Clock className="w-5 h-5 text-gray-400" />
               </div>
@@ -198,8 +198,8 @@ export default function AnalyticsPage() {
         )}
 
         {/* 시간대별 MAE 비교 그래프 */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4 mb-8 first:mt-0 mt-8">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
             시간대별 MAE 비교
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -231,8 +231,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* 노선별 MAE 비교 그래프 */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4 mb-8 mt-8">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
             노선별 MAE 비교
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -252,8 +252,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* 상세 메트릭 테이블 */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow py-4 px-4 mt-8">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
             상세 메트릭
           </h2>
           <div className="overflow-x-auto">

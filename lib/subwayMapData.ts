@@ -671,9 +671,9 @@ export const getStationColor = (stationId: string, congestionLevel?: "여유" | 
     // 혼잡도에 따른 색상 조정 로직
     // 혼잡도가 높을수록 어둡게, 낮을수록 밝게
     const baseColor = lineColor;
-    const alpha = congestionLevel === 1 ? 1.0 : // 여유: 밝게
-                  congestionLevel === 2 ? 0.9 : // 보통: 약간 어둡게
-                  congestionLevel === 3 ? 0.7 : // 혼잡: 어둡게
+    const alpha = congestionLevel === "여유" ? 1.0 : // 여유: 밝게
+                  congestionLevel === "보통" ? 0.9 : // 보통: 약간 어둡게
+                  congestionLevel === "주의" ? 0.7 : // 혼잡: 어둡게
                   0.5; // 매우 혼잡: 매우 어둡게
     
     // RGB 값 추출 및 조정
@@ -692,3 +692,19 @@ export const getStationColor = (stationId: string, congestionLevel?: "여유" | 
   
   return lineColor;
 };
+
+// 공통 노선 탭 데이터 (1~9호선)
+export const LINE_TABS = [
+  { id: '1' as LineId, label: '1호선' },
+  { id: '2' as LineId, label: '2호선' },
+  { id: '3' as LineId, label: '3호선' },
+  { id: '4' as LineId, label: '4호선' },
+  { id: '5' as LineId, label: '5호선' },
+  { id: '6' as LineId, label: '6호선' },
+  { id: '7' as LineId, label: '7호선' },
+  { id: '8' as LineId, label: '8호선' },
+  { id: '9' as LineId, label: '9호선' },
+];
+
+// 공통 노선 ID 배열 (1~9호선)
+export const ALL_LINE_IDS: LineId[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];

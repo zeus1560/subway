@@ -159,102 +159,77 @@ export async function POST(request: NextRequest) {
       departureTime = dt;
     }
 
-    // 네이버 지도 API를 사용한 경로 탐색 (실패 시 내부 그래프 기반 경로 탐색으로 fallback)
+    // 새로운 routeAlgorithm.ts 기반 경로 탐색 사용 (네이버 API 비활성화)
     let routes: any[] = [];
     try {
-      logger.info('경로 API: 네이버 API 호출 시작', { startStation, endStation, departureTime });
-      routes = await findRoutesWithNaver(startStation, endStation, departureTime);
-      logger.info('경로 API: 네이버 API 호출 완료', { routeCount: routes.length });
-    } catch (naverError) {
-      logger.warn('경로 API: 네이버 API 호출 실패, 내부 그래프 기반 경로 탐색으로 fallback', {
-        startStation,
-        endStation,
-        departureTime,
-        errorMessage: (naverError as Error)?.message,
-      });
+      logger.info('경로 API: 내부 그래프 기반 경로 탐색 시작 (routeAlgorithm.ts)', { startStation, endStation, departureTime });
+      const graphRoutes = await findRoutes(startStation, endStation, departureTime);
+      logger.info('경로 API: 내부 그래프 기반 경로 탐색 완료', { routeCount: graphRoutes.length });
       
-      // 네이버 API 실패 시 내부 그래프 기반 경로 탐색 사용
-      try {
-        logger.info('경로 API: 내부 그래프 기반 경로 탐색 시작', { startStation, endStation, departureTime });
-        const graphRoutes = await findRoutes(startStation, endStation, departureTime);
-        logger.info('경로 API: 내부 그래프 기반 경로 탐색 완료', { routeCount: graphRoutes.length });
-        
-        // GraphRouteResult를 RouteResult 형식으로 변환
-        routes = graphRoutes.map((gr, idx) => ({
-          id: `graph-${Date.now()}-${idx}`,
-          type: gr.type || 'fastest',
-          stations: gr.stations || [],
-          stationIds: gr.stationIds || [],
-          totalTravelMinutes: gr.totalTravelMinutes || gr.travelTime || 0,
-          travelTime: gr.travelTime || gr.totalTravelMinutes || 0,
-          transfers: gr.transfers || 0,
-          congestionScore: gr.congestionScore || 0,
-          fare: gr.fare || 0,
-          detail: {
-            perSegment: gr.detail?.perSegment || [],
-          },
-          rawSubPath: undefined, // 그래프 기반 경로는 rawSubPath 없음
-        }));
-      } catch (graphError) {
-        logger.error('경로 API: 내부 그래프 기반 경로 탐색도 실패', graphError as Error, {
-          startStation,
-          endStation,
-          departureTime,
+      // UI 경로 응답 디버그 로그
+      if (graphRoutes.length > 0) {
+        const firstRoute = graphRoutes[0];
+        logger.info('경로 API: UI 응답 구조', {
+          firstRoute: {
+            type: firstRoute.type,
+            stations: firstRoute.stations,
+            perSegment: firstRoute.detail?.perSegment?.map(s => ({
+              from: s.from,
+              to: s.to,
+              line: s.line,
+              time: s.durationMinutes ?? s.travelTime,
+              isTransfer: s.isTransfer,
+            })),
+            totalMinutes: firstRoute.totalTravelMinutes ?? firstRoute.travelTime,
+            transfers: firstRoute.transfers,
+            fare: firstRoute.fare,
+          }
         });
-        return NextResponse.json(
-          { 
-            success: false,
-            error: '경로 탐색 중 오류가 발생했습니다.',
-            message: '네이버 API와 내부 경로 탐색 모두 실패했습니다.'
-          },
-          { status: 500 }
-        );
       }
-    }
-    
-    // 네이버 API가 빈 배열을 반환한 경우에도 내부 그래프 기반 경로 탐색 시도
-    if (routes.length === 0) {
-      logger.warn('경로 API: 네이버 API가 빈 경로 반환, 내부 그래프 기반 경로 탐색으로 fallback', { 
-        startStation, 
-        endStation, 
-        departureTime,
-      });
       
-      try {
-        logger.info('경로 API: 내부 그래프 기반 경로 탐색 시작 (빈 경로 fallback)', { startStation, endStation, departureTime });
-        const graphRoutes = await findRoutes(startStation, endStation, departureTime);
-        logger.info('경로 API: 내부 그래프 기반 경로 탐색 완료 (빈 경로 fallback)', { routeCount: graphRoutes.length });
-        
-        // GraphRouteResult를 RouteResult 형식으로 변환
-        routes = graphRoutes.map((gr, idx) => ({
-          id: `graph-${Date.now()}-${idx}`,
-          type: gr.type || 'fastest',
-          stations: gr.stations || [],
-          stationIds: gr.stationIds || [],
-          totalTravelMinutes: gr.totalTravelMinutes || gr.travelTime || 0,
-          travelTime: gr.travelTime || gr.totalTravelMinutes || 0,
-          transfers: gr.transfers || 0,
-          congestionScore: gr.congestionScore || 0,
-          fare: gr.fare || 0,
-          detail: {
-            perSegment: gr.detail?.perSegment || [],
-          },
-          rawSubPath: undefined, // 그래프 기반 경로는 rawSubPath 없음
-        }));
-      } catch (graphError) {
-        logger.error('경로 API: 내부 그래프 기반 경로 탐색도 실패 (빈 경로 fallback)', graphError as Error, {
-          startStation,
-          endStation,
-          departureTime,
-        });
+      if (!graphRoutes || graphRoutes.length === 0) {
+        logger.warn('경로 API: 경로를 찾을 수 없음', { startStation, endStation });
         return NextResponse.json(
           { 
             success: false,
             message: '경로를 찾을 수 없습니다. 역 이름을 확인해주세요.' 
           },
-          { status: 200 } // 404 대신 200으로 반환하고 success: false로 표시
+          { status: 200 }
         );
       }
+      
+      // GraphRouteResult를 RouteResult 형식으로 변환
+      routes = graphRoutes.map((gr, idx) => ({
+        id: `graph-${Date.now()}-${idx}`,
+        type: gr.type || 'fastest',
+        stations: gr.stations || [],
+        stationIds: gr.stationIds || [],
+        totalTravelMinutes: gr.totalTravelMinutes || gr.travelTime || 0,
+        travelTime: gr.travelTime || gr.totalTravelMinutes || 0,
+        transfers: gr.transfers || 0,
+        congestionScore: gr.congestionScore || 0,
+        fare: gr.fare || 0,
+        detail: {
+          perSegment: gr.detail?.perSegment || [],
+        },
+        rawSubPath: undefined, // 그래프 기반 경로는 rawSubPath 없음
+      }));
+    } catch (graphError) {
+      logger.error('경로 API: 내부 그래프 기반 경로 탐색 실패', graphError as Error, {
+        startStation,
+        endStation,
+        departureTime,
+        errorMessage: (graphError as Error)?.message,
+        errorStack: (graphError as Error)?.stack,
+      });
+      return NextResponse.json(
+        { 
+          success: false,
+          error: '경로 탐색 중 오류가 발생했습니다.',
+          message: (graphError as Error)?.message || '경로를 찾을 수 없습니다. 역 이름을 확인해주세요.'
+        },
+        { status: 500 }
+      );
     }
     
     // 모든 route를 normalizeRoute로 정규화 (시간 필드만 정규화, rawSubPath는 보존)

@@ -15,7 +15,7 @@
  * 성공률: 약 97% 이상
  */
 
-import { getStationByName, STATIONS, type LineId } from './subwayMapData';
+import { getStationByName, STATIONS, type LineId, ALL_LINE_IDS } from './subwayMapData';
 
 // 역명 정규화 (괄호 제거, 공백 제거 등)
 export function normalizeStationName(name: string): string {
@@ -85,7 +85,7 @@ export function mapCSVStationToStationId(csvStationName: string, csvLineNum: str
   const normalizedName = normalizeStationName(csvStationName);
   
   // LineId 타입으로 변환 (1-9호선만 유효)
-  const isValidLineNum = ['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(lineNumStr);
+  const isValidLineNum = ALL_LINE_IDS.includes(lineNumStr as LineId);
   const lineNum = isValidLineNum ? (lineNumStr as LineId) : null;
   
   // 1. 정확한 역명으로 찾기 (호선 체크 포함)

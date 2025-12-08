@@ -56,26 +56,26 @@ export default function ReportPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">리포트</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+        <div className="container mx-auto px-6 py-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">리포트</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             맞춤형 분석 리포트를 확인하세요
           </p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         <div className="space-y-6">
           {/* 혼잡 피하기 노하우 */}
           {tips && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 first:mt-0 mt-6">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
                     <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
                       {tips.title}
                     </h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -100,14 +100,14 @@ export default function ReportPage() {
 
           {/* 개인 맞춤형 리포트 */}
           {user && report ? (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 mt-6">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
                     <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
                       {report.title}
                     </h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -129,9 +129,9 @@ export default function ReportPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 text-center mt-6">
               <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 개인 맞춤형 리포트를 보려면 로그인이 필요합니다.
               </p>
               <a

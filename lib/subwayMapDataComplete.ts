@@ -2,6 +2,7 @@
 // stationData.ts의 모든 역을 포함하여 생성
 
 import { STATION_DATA } from './stationData';
+import { ALL_LINE_IDS } from './subwayMapData';
 
 export type LineId = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 
@@ -43,7 +44,7 @@ const convertStationData = (): Station[] => {
   // stationData.ts의 모든 역을 변환
   STATION_DATA.forEach((station) => {
     const lineNum = station.lineNum as LineId;
-    if (!lineNum || !['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(lineNum)) {
+    if (!lineNum || !ALL_LINE_IDS.includes(lineNum)) {
       return; // 1-9호선만 처리
     }
     
@@ -186,9 +187,9 @@ export const getStationColor = (stationId: string, congestionLevel?: "여유" | 
     // 혼잡도에 따른 색상 조정 로직
     // 혼잡도가 높을수록 어둡게, 낮을수록 밝게
     const baseColor = lineColor;
-    const alpha = congestionLevel === 1 ? 1.0 : // 여유: 밝게
-                  congestionLevel === 2 ? 0.9 : // 보통: 약간 어둡게
-                  congestionLevel === 3 ? 0.7 : // 혼잡: 어둡게
+    const alpha = congestionLevel === "여유" ? 1.0 : // 여유: 밝게
+                  congestionLevel === "보통" ? 0.9 : // 보통: 약간 어둡게
+                  congestionLevel === "주의" ? 0.7 : // 혼잡: 어둡게
                   0.5; // 매우 혼잡: 매우 어둡게
     
     // RGB 값 추출 및 조정

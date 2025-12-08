@@ -7,10 +7,16 @@ export interface SubPathSummary {
   label: string;               // "도보", "5호선", "버스 702" 등
   minutes: number | null;      // 유효한 시간(분), 없으면 null
   stationCount?: number;        // 정거장 수 (지하철/버스 구간만)
+  from?: string;                // 출발역 이름 (지하철/버스 구간만)
+  to?: string;                  // 도착역 이름 (지하철/버스 구간만)
+  stations?: string[];          // 구간 내 모든 역 이름 배열 (지하철/버스 구간만)
+  line?: string;                // 노선 번호 (예: "5", "9")
 }
 
 export interface StationInfo {
   name: string;
+  line?: string;              // 노선 번호 (예: '5', '2')
+  type?: 'start' | 'transfer' | 'end';  // 역 타입
 }
 
 export interface RouteSummary {

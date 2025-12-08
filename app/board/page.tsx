@@ -128,9 +128,9 @@ export default function BoardPage() {
       `}</style>
 
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-[#111827] dark:text-white">커뮤니티</h1>
+            <h1 className="text-xl font-semibold text-[#111827] dark:text-white">커뮤니티</h1>
           </div>
 
           {/* 검색창 */}
@@ -147,10 +147,10 @@ export default function BoardPage() {
 
           {/* 오늘의 인기 게시글 (검색창 아래) */}
           {popularPosts.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="mb-4 first:mt-0 mt-6">
+              <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-5 h-5 text-[#2563eb]" />
-                <h2 className="text-lg font-semibold text-[#111827] dark:text-white">오늘의 인기글</h2>
+                <h2 className="text-base font-semibold text-[#111827] dark:text-white">오늘의 인기글</h2>
               </div>
               <div className="space-y-3">
                 {popularPosts.map((post) => {
@@ -232,15 +232,15 @@ export default function BoardPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         {/* 실시간 트렌드 */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="mb-6 first:mt-0 mt-6">
+          <div className="flex items-center gap-2 mb-2">
             <Activity className="w-5 h-5 text-[#2563eb]" />
-            <h2 className="text-lg font-semibold text-[#111827] dark:text-white">실시간 트렌드</h2>
+            <h2 className="text-base font-semibold text-[#111827] dark:text-white">실시간 트렌드</h2>
           </div>
           {trendingLines.length > 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 py-4 px-4">
               <div className="space-y-3">
                 {trendingLines.map((trend, index) => (
                   <div
@@ -288,10 +288,10 @@ export default function BoardPage() {
 
         {/* 인기 태그 */}
         {popularTags.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="mb-6 mt-6">
+            <div className="flex items-center gap-2 mb-2">
               <Hash className="w-5 h-5 text-[#2563eb]" />
-              <h2 className="text-lg font-semibold text-[#111827] dark:text-white">인기 태그</h2>
+              <h2 className="text-base font-semibold text-[#111827] dark:text-white">인기 태그</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {popularTags.map((tag) => (
@@ -309,12 +309,24 @@ export default function BoardPage() {
 
         {/* 게시글 리스트 */}
         {filteredPosts.length === 0 ? (
+          <div className="mt-6">
+            {/* Mock 카드 - 예시 게시글 */}
+            <div className="rounded-xl bg-bg-card p-4 shadow-sm mb-4">
+              <div className="text-sm font-semibold text-text-strong mb-1">
+                오늘 9호선 퇴근 러쉬 어땠나요?
+              </div>
+              <div className="text-xs text-text-muted mb-2">
+                후기 · 9호선 · 퇴근시간
+              </div>
+              <div className="text-xs text-brand-primary">예시 게시글 (데모용)</div>
+            </div>
+
           <div className="text-center py-16">
             <div className="flex flex-col items-center justify-center">
               <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
                 <Users className="w-16 h-16 text-gray-400" />
               </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 text-base">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 아직 등록된 글이 없습니다. 첫 게시글을 작성해서 정보를 나눠보세요 🧍‍♂️💬
               </p>
               <button
@@ -334,19 +346,21 @@ export default function BoardPage() {
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     AI가 자주 이용하는 노선을 기반으로 추천글을 제공합니다 💡
                   </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredPosts.map((post) => {
+            {filteredPosts.map((post, index) => {
               const commentCount = getComments(post.id).length;
+              const isFirst = index === 0;
               return (
                 <div
                   key={post.id}
                   onClick={() => router.push(`/board/${post.id}`)}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all"
+                  className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 py-4 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all ${isFirst ? 'first:mt-0' : 'mt-6'}`}
                 >
                   {/* 상단: 태그, 제목 */}
                   <div className="mb-2">

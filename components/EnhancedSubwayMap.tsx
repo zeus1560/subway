@@ -1262,7 +1262,7 @@ export default function EnhancedSubwayMap({
             r={isSelected ? 5 : 4}
             fill={isSelected ? lineColor : isHovered ? lineColor : 'white'}
             stroke={isSelected ? 'white' : lineColor}
-            strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 1}
+            strokeWidth={isSelected ? 2 : isHovered ? 3 : 1}
             className="cursor-pointer transition-all duration-200"
             onClick={(e) => handleStationClick(station, e)}
             onMouseEnter={() => setHoveredStation(station.id)}
@@ -1272,6 +1272,51 @@ export default function EnhancedSubwayMap({
               filter: isSelected ? 'drop-shadow(0 0 8px rgba(0,0,0,0.3))' : undefined,
             }}
           />
+          {/* 역 hover tooltip */}
+          {isHovered && (
+            <g>
+              <text
+                x={station.layoutX}
+                y={station.layoutY - 12}
+                textAnchor="middle"
+                className="pointer-events-none"
+                fontSize="12"
+                fill="white"
+                fontWeight="500"
+              >
+                <tspan
+                  x={station.layoutX}
+                  dy="0"
+                  fill="white"
+                  stroke="black"
+                  strokeWidth="0.3"
+                  strokeOpacity="0.8"
+                >
+                  {station.name}
+                </tspan>
+              </text>
+              <rect
+                x={station.layoutX - (station.name.length * 6 + 8) / 2}
+                y={station.layoutY - 24}
+                width={station.name.length * 6 + 8}
+                height="18"
+                rx="4"
+                fill="rgba(0, 0, 0, 0.7)"
+                className="pointer-events-none"
+              />
+              <text
+                x={station.layoutX}
+                y={station.layoutY - 12}
+                textAnchor="middle"
+                className="pointer-events-none"
+                fontSize="12"
+                fill="white"
+                fontWeight="500"
+              >
+                {station.name}
+              </text>
+            </g>
+          )}
           <g>
             {(() => {
               const labelInfo = labelPositions.get(station.id);
@@ -1520,27 +1565,28 @@ export default function EnhancedSubwayMap({
 
       {/* 1호선 전용 컨트롤 (로컬 뷰가 아닐 때만 표시) */}
       {activeLine === '1' && viewMode !== 'local' && (
-        <div className="absolute top-16 left-3 z-20 flex flex-col gap-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg p-3 shadow-lg max-w-[240px]">
-          <p className="text-xs font-semibold text-gray-200 dark:text-gray-200 mb-1">
+        <div className="absolute top-16 left-3 z-20 bg-bg-card p-4 rounded-xl shadow-sm flex flex-col gap-3 max-w-[240px]">
+          <p className="text-xs font-semibold text-white mb-1">
             1호선 보기 방식
           </p>
-          <p className="text-[11px] text-gray-400 dark:text-gray-400 mb-2 leading-snug">
+          <p className="text-[11px] text-gray-400 mb-2 leading-snug">
             1호선은 서울 시내(청량리~구로)를 기준으로 북쪽(소요산·동두천)과
             서쪽(인천·신창) 방향 지선으로 나뉩니다. 보고 싶은 구간을 선택하세요.
           </p>
           
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <button
               onClick={() => {
                 setLine1Preset('seoulOnly');
                 setTimeout(() => handleReset(), 50);
               }}
-              className={`px-3 py-1.5 text-xs rounded-md text-left transition-colors ${
+              className={`px-3 py-2 text-xs rounded-md text-left transition-colors flex items-center gap-2 ${
                 line1Preset === 'seoulOnly'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-800/80 dark:bg-gray-700/80 text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-600'
+                  : 'bg-gray-800/80 text-gray-200 hover:bg-gray-700'
               }`}
             >
+              <MapPin className="w-3 h-3" />
               서울 시내만 (청량리~구로)
             </button>
 
@@ -1549,12 +1595,13 @@ export default function EnhancedSubwayMap({
                 setLine1Preset('north');
                 setTimeout(() => handleReset(), 50);
               }}
-              className={`px-3 py-1.5 text-xs rounded-md text-left transition-colors ${
+              className={`px-3 py-2 text-xs rounded-md text-left transition-colors flex items-center gap-2 ${
                 line1Preset === 'north'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-800/80 dark:bg-gray-700/80 text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-600'
+                  : 'bg-gray-800/80 text-gray-200 hover:bg-gray-700'
               }`}
             >
+              <MapPin className="w-3 h-3" />
               서울 + 북쪽 (연천~구로)
             </button>
 
@@ -1563,12 +1610,13 @@ export default function EnhancedSubwayMap({
                 setLine1Preset('west');
                 setTimeout(() => handleReset(), 50);
               }}
-              className={`px-3 py-1.5 text-xs rounded-md text-left transition-colors ${
+              className={`px-3 py-2 text-xs rounded-md text-left transition-colors flex items-center gap-2 ${
                 line1Preset === 'west'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-800/80 dark:bg-gray-700/80 text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-600'
+                  : 'bg-gray-800/80 text-gray-200 hover:bg-gray-700'
               }`}
             >
+              <MapPin className="w-3 h-3" />
               서울 + 서쪽 (인천·신창 방면)
             </button>
 
@@ -1577,12 +1625,13 @@ export default function EnhancedSubwayMap({
                 setLine1Preset('all');
                 setTimeout(() => handleReset(), 50);
               }}
-              className={`px-3 py-1.5 text-xs rounded-md text-left transition-colors ${
+              className={`px-3 py-2 text-xs rounded-md text-left transition-colors flex items-center gap-2 ${
                 line1Preset === 'all'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-800/80 dark:bg-gray-700/80 text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-600'
+                  : 'bg-gray-800/80 text-gray-200 hover:bg-gray-700'
               }`}
             >
+              <MapPin className="w-3 h-3" />
               1호선 전체 보기
             </button>
           </div>
@@ -1592,7 +1641,7 @@ export default function EnhancedSubwayMap({
       {/* 줌 컨트롤은 외부 컴포넌트로 이동됨 */}
 
       {/* 🔥 pan/zoom 분리된 SVG 영역 */}
-      <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-full overflow-hidden flex items-center justify-center">
         {/* pan 전용 래퍼 */}
         <div
           className="w-full h-full transition-transform duration-200 ease-out"

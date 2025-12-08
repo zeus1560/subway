@@ -7,6 +7,7 @@ import { getFavoriteStations, saveStationUsage } from '@/lib/storage';
 import { analyzeFavoriteStations, analyzeStationTrend } from '@/lib/analysis';
 import { generateStationRecommendation, CarRecommendation } from '@/lib/recommendation';
 import { getLineColor } from '@/lib/utils';
+import { random } from '@/lib/random';
 
 // 주요 역 목록
 const STATIONS = [
@@ -70,7 +71,7 @@ const generateMockCarData = (direction: 'up' | 'down') => {
       carNumber: i,
       congestionLevel,
       congestionPercent: Math.round(congestionPercent),
-      doorPosition: i <= 3 ? 'front' : i >= 8 ? 'back' : 'middle',
+      doorPosition: (i <= 3 ? 'front' : i >= 8 ? 'back' : 'middle') as 'front' | 'middle' | 'back',
       transferAdvantage: i >= 4 && i <= 6, // 중간 칸이 환승 유리
     });
   }
@@ -146,7 +147,7 @@ export default function TrainRecommendationPage() {
       const arrivalContext = `train-arrival-${selectedStation.name}-${selectedDirection}`;
       const nextTrainArrival = random.contextRandomInt(arrivalContext, 60, 360); // 1-6분 사이
       
-      const rec = generateStationRecommendation(
+      const rec = await generateStationRecommendation(
         selectedStation.name,
         selectedStation.lineNum,
         selectedDirection,
@@ -191,7 +192,7 @@ export default function TrainRecommendationPage() {
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             AI 열차 칸 추천
           </h1>
           
@@ -324,7 +325,7 @@ export default function TrainRecommendationPage() {
         ) : recommendation ? (
           <>
             {/* 방향 선택 */}
-            <div className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-6 first:mt-0 mt-6">
               <button
                 onClick={() => setSelectedDirection('up')}
                 className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-colors ${
@@ -348,11 +349,11 @@ export default function TrainRecommendationPage() {
             </div>
 
             {/* AI 인사이트 */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-xl py-4 px-4 mb-6 mt-6">
               <div className="flex items-start gap-3">
                 <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
                     AI 추천 분석
                   </h3>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -363,7 +364,7 @@ export default function TrainRecommendationPage() {
             </div>
 
             {/* 다음 열차 정보 */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 mb-6 mt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Train className="w-5 h-5 text-gray-500" />
@@ -387,8 +388,8 @@ export default function TrainRecommendationPage() {
             </div>
 
             {/* 추천 칸 목록 */}
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="mb-6 mt-6">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
                 추천 탑승 칸 순위
               </h2>
               <div className="space-y-3">
@@ -456,8 +457,8 @@ export default function TrainRecommendationPage() {
             </div>
 
             {/* 열차 칸 시각화 */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 mt-6">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
                 열차 칸별 혼잡도
               </h2>
               <div className="flex gap-2 overflow-x-auto pb-2">

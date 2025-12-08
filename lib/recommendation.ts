@@ -141,13 +141,33 @@ export const recommendOptimalCars = (
 };
 
 // AI 인사이트 생성
-export const generateAIInsight = (
+export const generateAIInsight = async (
   stationName: string,
   lineNum: string,
   direction: 'up' | 'down',
   recommendedCars: CarRecommendation[],
-  trend: TrendAnalysis
-): string => {
+  trend: TrendAnalysis,
+  congestionData?: Array<{ carNumber: number; congestionLevel: string; percentage: number }>
+): Promise<string> => {
+  // OpenAI API 사용 시도 (환경 변수 설정 시)
+  if (congestionData && congestionData.length > 0) {
+    try {
+      const { generateAIRecommendationInsight } = await import('./openaiService');
+      const aiInsight = await generateAIRecommendationInsight(
+        stationName,
+        lineNum,
+        recommendedCars.map(c => c.carNumber),
+        congestionData
+      );
+      if (aiInsight) {
+        return aiInsight;
+      }
+    } catch (error) {
+      console.warn('OpenAI API 사용 실패, 기본 인사이트로 대체:', error);
+    }
+  }
+
+  // 기존 휴리스틱 방식 (폴백)
   const topCar = recommendedCars[0];
   const currentHour = new Date().getHours();
   const currentDay = new Date().getDay();
@@ -196,7 +216,7 @@ export const generateAIInsight = (
 };
 
 // 역별 종합 추천 생성
-export const generateStationRecommendation = (
+export const generateStationRecommendation = async (
   stationName: string,
   lineNum: string,
   direction: 'up' | 'down',
@@ -207,7 +227,7 @@ export const generateStationRecommendation = (
     preferQuiet?: boolean;
     preferFront?: boolean;
   }
-): StationRecommendation => {
+): Promise<StationRecommendation> => {
   const trend = analyzeStationTrend(stationName, lineNum, direction);
   const recommendedCars = recommendOptimalCars(
     stationName,
@@ -231,8 +251,21 @@ export const generateStationRecommendation = (
   const estimatedArrival =
     minutes > 0 ? `${minutes}분 후` : seconds > 0 ? `${seconds}초 후` : '곧 도착';
 
-  // AI 인사이트
-  const aiInsight = generateAIInsight(stationName, lineNum, direction, recommendedCars, trend);
+  // AI 인사이트 (비동기 처리)
+  const aiInsight = await generateAIInsight(
+    stationName,
+    lineNum,
+    direction,
+    recommendedCars,
+    trend,
+    cars.map(c => ({
+      carNumber: c.carNumber,
+      congestionLevel: c.congestionLevel === 'relaxed' ? '여유' :
+                       c.congestionLevel === 'normal' ? '보통' :
+                       c.congestionLevel === 'caution' ? '주의' : '혼잡',
+      percentage: c.congestionPercent,
+    }))
+  );
 
   return {
     stationName,

@@ -179,7 +179,7 @@ async function loadCSVData(csvText: string): Promise<void> {
       dataByStation.get(key)!.push(data);
     }
     
-    for (const [key, data] of dataByStation.entries()) {
+    for (const [key, data] of Array.from(dataByStation.entries())) {
       historicalCache.set(key, data);
     }
     
@@ -209,7 +209,7 @@ async function loadCSVData(csvText: string): Promise<void> {
   }
   
   // 캐시에 저장
-  for (const [key, data] of dataByStation.entries()) {
+  for (const [key, data] of Array.from(dataByStation.entries())) {
     historicalCache.set(key, data);
   }
   
@@ -227,7 +227,7 @@ function generateBaselineData(dataByStation: Map<string, HistoricalData[]>): voi
   const currentHour = now.getHours();
   const currentDay = now.getDay();
   
-  for (const [key, data] of dataByStation.entries()) {
+  for (const [key, data] of Array.from(dataByStation.entries())) {
     if (data.length === 0) continue;
     
     const firstData = data[0];

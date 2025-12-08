@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, ThumbsUp, TrendingUp, Users } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getPosts } from '@/lib/boardService';
 
 export default function UserEngagementCard() {
@@ -128,7 +128,7 @@ export default function UserEngagementCard() {
             <Tooltip />
             <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]}>
               {chartData.map((entry, index) => (
-                <Bar key={index} fill={entry.color} />
+                <Cell key={index} fill={entry.color} />
               ))}
             </Bar>
           </BarChart>

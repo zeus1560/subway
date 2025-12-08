@@ -19,10 +19,12 @@ import { LINE_COLORS, getStationByName } from '@/lib/subwayMapData';
 import { getStationCongestion, calculateCongestionLevel, RouteResult } from '@/lib/api';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useRouteSearch } from '@/hooks/useRouteSearch';
+import { normalizeRoute } from '@/lib/routeNormalizer';
 import { logger } from '@/lib/logger';
 import { random } from '@/lib/random';
+import { dumpNeighborsByName } from '@/lib/graph/debugGraph';
+import type { RouteSummary } from '@/types/route';
 
-type RouteOption = 'lessCrowded' | 'minTime' | 'lessTransfer' | 'lowerFare';
 
 interface NearbyStation extends StationCoordinate {
   distance: number;
@@ -48,9 +50,7 @@ export default function HomePage() {
   const {
     routes,
     loading: routeLoading,
-    routeOption,
     departureDateTime,
-    setRouteOption,
     setDepartureDateTime,
     searchRoute,
     getMinDateTimeString,
@@ -99,6 +99,30 @@ export default function HomePage() {
     setNotificationsEnabled(notificationSettings.enabled);
     
     loadWeatherAndEvents();
+
+    // 🔍 디버그: 그래프 구조 확인 (개발 환경에서만)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n🔍 [디버그] 그래프 구조 확인 시작...');
+      
+      // 5호선 출발 쪽
+      dumpNeighborsByName('방화');
+      dumpNeighborsByName('개화산');
+      dumpNeighborsByName('김포공항');
+
+      // 5→2 환승 핵심 구간
+      dumpNeighborsByName('까치산');
+      dumpNeighborsByName('영등포구청');
+
+      // 5→9 환승 핵심 구간
+      dumpNeighborsByName('여의도');
+
+      // 도착역들
+      dumpNeighborsByName('강남');
+      dumpNeighborsByName('신논현');
+      dumpNeighborsByName('서울역');
+      
+      console.log('\n✅ [디버그] 그래프 구조 확인 완료\n');
+    }
     getCurrentLocation();
 
     // 로그인 상태 변경 이벤트 리스너 추가
@@ -150,7 +174,11 @@ export default function HomePage() {
       }
       
       const congestion = calculateCongestionLevel(passengerCount);
-      setCurrentCongestion(congestion);
+      setCurrentCongestion({
+        level: congestion.value,
+        text: congestion.level,
+        color: congestion.color,
+      });
       
       // 평균 대기 시간 계산
       const waitTime = Math.round(passengerCount / 100);
@@ -321,91 +349,7 @@ export default function HomePage() {
     return '1'; // 기본값
   }, [routes]);
 
-  // 경로를 구간별로 나누기 (출발역, 환승역들, 도착역) - 메모이제이션
-  const getRouteSections = useCallback((route: RouteResult) => {
-    const sections: Array<{
-      stations: string[];
-      startStation: string;
-      transferStation?: string; // 환승역 정보 추가
-      endStation: string;
-      line: string;
-      isTransfer: boolean;
-    }> = [];
-    
-    if (!route.stations || route.stations.length === 0) return sections;
-    
-    // 각 역의 실제 노선 정보 가져오기 (인덱스 기반으로 정확하게)
-    const getStationLine = (stationName: string, index: number) => {
-      // route.stationLines에서 인덱스로 직접 찾기 (가장 정확)
-      if (route.stationLines && route.stationLines[index]) {
-        return route.stationLines[index].line;
-      }
-      
-      // route.stationLines에서 역 이름으로 찾기
-      const stationLine = route.stationLines?.find((sl: { station: string; line: string }) => sl.station === stationName);
-      if (stationLine) return stationLine.line;
-      
-      // subwayMapData에서 직접 찾기
-      return getStationLineFromData(stationName);
-    };
-    
-    let currentSection: string[] = [route.stations[0]];
-    let currentLine = getStationLine(route.stations[0], 0);
-    
-    for (let i = 1; i < route.stations.length; i++) {
-      const prevStation = route.stations[i - 1];
-      const currentStation = route.stations[i];
-      const prevLine = getStationLine(prevStation, i - 1);
-      const currentLineForStation = getStationLine(currentStation, i);
-      
-      // 환승 여부 확인: 노선이 바뀌는 경우
-      // 단, 같은 역 이름이지만 다른 노선인 경우도 환승으로 처리
-      const isTransfer = prevLine !== currentLineForStation;
-      
-      if (isTransfer) {
-        // 현재 구간 저장
-        if (currentSection.length > 0) {
-          // 환승역은 현재 역 (노선이 바뀌는 지점)
-          sections.push({
-            stations: [...currentSection], // 환승 전까지의 역들
-            startStation: currentSection[0],
-            endStation: prevStation, // 환승 전 마지막 역
-            transferStation: currentStation, // 실제 환승역 (노선이 바뀌는 역)
-            line: currentLine,
-            isTransfer: false,
-          });
-        }
-        
-        // 새 구간 시작 (환승역을 시작점으로 포함)
-        currentSection = [currentStation];
-        currentLine = currentLineForStation;
-      } else {
-        // 같은 노선이면 계속 추가
-        currentSection.push(currentStation);
-      }
-    }
-    
-    // 마지막 구간 추가
-    if (currentSection.length > 0) {
-      sections.push({
-        stations: [...currentSection],
-        startStation: currentSection[0],
-        endStation: currentSection[currentSection.length - 1],
-        transferStation: undefined, // 마지막 구간은 환승역 없음
-        line: currentLine,
-        isTransfer: false,
-      });
-    }
-    
-    return sections.length > 0 ? sections : [{
-      stations: route.stations,
-      startStation: route.stations[0],
-      endStation: route.stations[route.stations.length - 1],
-      transferStation: undefined,
-      line: getStationLine(route.stations[0], 0),
-      isTransfer: false,
-    }];
-  }, [getStationLineFromData]);
+  // getRouteSections 함수 제거됨 - normalizeRoute와 subPaths를 사용하도록 변경
 
   if (!mounted) {
     return null;
@@ -524,18 +468,18 @@ export default function HomePage() {
 
       {/* 즐겨찾기 섹션 (모든 탭에서 표시) */}
       {(favoriteStations.length > 0 || favoriteRoutes.length > 0) && (
-      <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 first:mt-0 mt-6">
+        <div className="container mx-auto px-6 py-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
               <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
               자주 찾는 역 / 출근 경로
             </h2>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* 즐겨찾는 역 */}
               {favoriteStations.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">즐겨찾는 역</h3>
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">즐겨찾는 역</h3>
                   <div className="flex flex-wrap gap-2">
                     {favoriteStations.slice(0, 5).map((fav, idx) => (
                       <button
@@ -555,7 +499,7 @@ export default function HomePage() {
               {/* 즐겨찾는 경로 */}
               {favoriteRoutes.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">자주 찾는 경로</h3>
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">자주 찾는 경로</h3>
                   <div className="flex flex-wrap gap-2">
                     {favoriteRoutes.slice(0, 5).map((fav, idx) => (
                       <button
@@ -591,16 +535,16 @@ export default function HomePage() {
 
       {/* 내 주변 역 리스트 (탭 컨텐츠) */}
       {activeTab === 'nearby' && (
-        <section className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 border-b border-blue-200 dark:border-gray-800 shadow-sm">
-          <div className="container mx-auto px-4 py-5">
-          <div className="flex items-center justify-between mb-4">
+        <section className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 border-b border-blue-200 dark:border-gray-800 shadow-sm first:mt-0 mt-6">
+          <div className="container mx-auto px-6 py-6">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
                 <div className="p-2 bg-blue-500 rounded-lg">
                   <MapPin className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">내 주변 역</h2>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">나에게 맞춤 정보</p>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">내 주변 역</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">나에게 맞춤 정보</p>
                 </div>
               {userLocation && nearbyStations.length > 0 && (
                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -690,39 +634,39 @@ export default function HomePage() {
               </div>
               
               {/* 나에게 맞춤 정보 섹션 - 이미지와 동일한 레이아웃 */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* 기준역 정보 카드 - 이미지와 동일한 레이아웃 */}
-                <div className="bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl shadow-lg border border-gray-100 p-6 text-white">
+                <div className="bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl shadow-lg border border-gray-100 py-4 px-4 text-white first:mt-0 mt-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="md:col-span-2">
-                      <div className="text-sm opacity-90 mb-1">기준역</div>
+                      <div className="text-sm opacity-90 mb-2">기준역</div>
                       <div className="text-lg font-semibold mb-4">
                         {currentStation ? `${currentStation.stationName}역` : nearbyStations[0] ? `${nearbyStations[0].name}역` : '역 정보 없음'}
                       </div>
-                      <div className="text-sm opacity-90 mb-1">현재 시간대 혼잡도</div>
+                      <div className="text-sm opacity-90 mb-2">현재 시간대 혼잡도</div>
                       <div className="text-2xl font-bold mb-4">
                         {currentCongestion?.level || '보통'}
                       </div>
                       <div className="pt-4 border-t border-white/20">
-                        <div className="text-sm opacity-90 mb-1">지금 추천</div>
+                        <div className="text-sm opacity-90 mb-2">지금 추천</div>
                         <div className="text-lg font-semibold">
-                          {currentCongestion?.level === '여유' ? '1~3칸' : currentCongestion?.level === '보통' ? '4~6칸' : '7~10칸'} · {currentCongestion?.level === '여유' ? '여유로운 칸' : currentCongestion?.level === '보통' ? '보통 혼잡도' : '주의 혼잡도'}
+                          {currentCongestion?.text === '여유' ? '1~3칸' : currentCongestion?.text === '보통' ? '4~6칸' : '7~10칸'} · {currentCongestion?.text === '여유' ? '여유로운 칸' : currentCongestion?.text === '보통' ? '보통 혼잡도' : '주의 혼잡도'}
                         </div>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <div className="text-sm opacity-90 mb-1">현재 시간</div>
+                        <div className="text-sm opacity-90 mb-2">현재 시간</div>
                         <div className="text-lg font-semibold">
                           {String(new Date().getHours()).padStart(2, '0')}시 {String(new Date().getMinutes()).padStart(2, '0')}분
                         </div>
                       </div>
                       <div>
-                        <div className="text-sm opacity-90 mb-1">평균 대기</div>
+                        <div className="text-sm opacity-90 mb-2">평균 대기</div>
                         <div className="text-lg font-semibold">{averageWaitTime}분</div>
                       </div>
                       <div>
-                        <div className="text-sm opacity-90 mb-1">지연/이슈</div>
+                        <div className="text-sm opacity-90 mb-2">지연/이슈</div>
                         <div className={`text-lg font-semibold ${hasIssues ? 'text-red-200' : 'text-green-200'}`}>
                           {hasIssues ? '있음' : '없음'}
                         </div>
@@ -732,11 +676,11 @@ export default function HomePage() {
                 </div>
               
               {/* 칸별 혼잡도 예측 - 이미지와 동일한 레이아웃 */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 py-4 px-4 mt-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Train className="w-5 h-5 text-blue-500" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">칸별 혼잡도 예측</h3>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">칸별 혼잡도 예측</h3>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
                       {currentStation ? `${currentStation.stationName}역 · ${currentStation.lineNum}호선` : nearbyStations[0] ? `${nearbyStations[0].name}역 · ${nearbyStations[0].lineNum}호선` : '역 정보 없음'}
                     </span>
@@ -771,6 +715,26 @@ export default function HomePage() {
                 
                 {carCongestionData[selectedDirection].length > 0 ? (
                   <div className="space-y-4">
+                    {/* 범례 - 상단 고정 */}
+                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }}></span>
+                        여유
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FACC15' }}></span>
+                        보통
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FB923C' }}></span>
+                        주의
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#EF4444' }}></span>
+                        혼잡
+                      </span>
+                    </div>
+
                     <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                       {carCongestionData[selectedDirection].map((car: any, index: number) => {
                         const getCongestionColor = (level: string) => {
@@ -796,23 +760,27 @@ export default function HomePage() {
                         return (
                           <div
                             key={index}
-                            className="relative rounded-lg p-3 text-center transition-all hover:scale-105 cursor-pointer"
+                            className={`relative rounded-xl p-3 bg-bg-card flex flex-col items-center gap-2 transition-all hover:scale-105 cursor-pointer ${
+                              isRecommended ? 'ring-2 ring-brand-primary ring-offset-2' : ''
+                            }`}
                             style={{
                               backgroundColor: congestionLevel === '여유' ? '#dcfce7' :
                                               congestionLevel === '보통' ? '#fef9c3' :
                                               congestionLevel === '주의' ? '#fed7aa' : '#fee2e2',
                             }}
                           >
-                            {/* 체크마크 - 모든 추천 칸에 표시 */}
+                            {/* AI 추천 배지 - 상단 오른쪽 */}
                             {isRecommended && (
-                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-[8px]">✓</span>
+                              <div className="absolute -top-1 -right-1 z-10">
+                                <span className="text-xs bg-brand-primary/20 text-brand-primary px-2 py-1 rounded-full">
+                                  AI 추천
+                                </span>
                               </div>
                             )}
-                            <div className="text-xs font-bold text-gray-700 mb-1">
+                            <div className="text-xs font-bold text-gray-700">
                               {carNo}
                             </div>
-                            <div className={`h-16 rounded ${getCongestionColor(congestionLevel)} mb-2 flex items-center justify-center`}>
+                            <div className={`h-16 rounded ${getCongestionColor(congestionLevel)} flex items-center justify-center`}>
                               <span className="text-white text-xs font-bold">
                                 {value}%
                               </span>
@@ -827,27 +795,6 @@ export default function HomePage() {
                           </div>
                         );
                       })}
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-green-500"></div>
-                        <span>여유</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-yellow-500"></div>
-                        <span>보통</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-orange-500"></div>
-                        <span>주의</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-red-500"></div>
-                        <span>혼잡</span>
-                      </div>
-                      <div className="ml-auto text-blue-600 dark:text-blue-400 font-medium">
-                        <span className="text-green-600">✓</span> 표시된 칸 추천
-                      </div>
                     </div>
                   </div>
                 ) : (
@@ -865,20 +812,20 @@ export default function HomePage() {
 
       {/* 경로 찾기 섹션 (탭 컨텐츠) */}
       {activeTab === 'route' && (
-        <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 min-h-[calc(100vh-200px)]">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-2 mb-4">
+        <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 min-h-[calc(100vh-200px)] first:mt-0 mt-6">
+          <div className="container mx-auto px-6 py-6">
+            <div className="flex items-center gap-2 mb-6">
               <div className="p-2 bg-blue-500 rounded-lg">
                 <Route className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">경로 찾기</h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">덜 붐비는 환승 루트 추천</p>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">경로 찾기</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">덜 붐비는 환승 루트 추천</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="space-y-6">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4 first:mt-0 mt-6">
                 <div className="flex items-center gap-3 mb-3">
                   <MapPin className="w-5 h-5 text-blue-500" />
                   <input
@@ -902,14 +849,14 @@ export default function HomePage() {
               </div>
 
               {/* 출발 시간 설정 - 항상 표시 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4 mt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="w-5 h-5 text-blue-500" />
-                  <label htmlFor="departure-time-home" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <label htmlFor="departure-time-home" className="text-base font-semibold text-gray-700 dark:text-gray-300">
                     출발 시간
                   </label>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   미래 시간만 설정할 수 있습니다. 비워두면 현재 시간 기준으로 예측합니다.
                 </div>
                 
@@ -978,49 +925,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setRouteOption('lessCrowded')}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    routeOption === 'lessCrowded'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  혼잡도 낮음
-                </button>
-                <button
-                  onClick={() => setRouteOption('minTime')}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    routeOption === 'minTime'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  최소 시간
-                </button>
-                <button
-                  onClick={() => setRouteOption('lessTransfer')}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    routeOption === 'lessTransfer'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  환승 적음
-                </button>
-                <button
-                  onClick={() => setRouteOption('lowerFare')}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    routeOption === 'lowerFare'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  요금 낮음
-                </button>
-              </div>
-
               <button
                 onClick={handleRouteSearch}
                 disabled={routeLoading}
@@ -1030,212 +934,155 @@ export default function HomePage() {
                 {routeLoading ? '경로 찾는 중...' : '경로 찾기'}
               </button>
 
-              {routes.length > 0 && (
-                <div className="space-y-3 mt-4">
-                  {routes.map((route, routeIndex) => {
-                    const isExpanded = expandedRouteIndex === routeIndex;
-                    const isOptimal = routeIndex === 0;
-                    
-                    // 구간별 시간 계산
-                    const sections = getRouteSections(route);
-                    const totalStations = route.stations.length;
-                    
-                    // route 전체 시간: ODsay info.totalTime 또는 실제 시간 정보 사용
-                    const routeTotalTime = (() => {
-                      const rawTotal = route.totalTravelMinutes ?? route.travelTime ?? route.estimatedTime ?? 0;
-                      const n = Number(rawTotal);
-                      if (Number.isFinite(n) && n > 0) return n;
-                      // segments에서 재계산
-                      const segments = route.detail?.perSegment || [];
-                      return segments.reduce((sum: number, seg: any) => {
-                        const segTime = Number(seg.durationMinutes ?? seg.travelTime ?? 0);
-                        return sum + (Number.isFinite(segTime) && segTime > 0 ? segTime : 0);
-                      }, 0);
-                    })();
-                    
-                    // 구간별 실제 시간 정보 가져오기 (perSegment에서)
-                    const segments = route.detail?.perSegment || [];
-                    const getSectionTime = (section: typeof sections[0]) => {
-                      // 같은 노선의 segments를 찾아서 시간 합산
-                      const sectionSegments = segments.filter((seg: any) => {
-                        const segLine = String(seg.line || '');
-                        const sectionLine = String(section.line || '');
-                        return segLine === sectionLine && 
-                               section.stations.some(station => seg.from === station || seg.to === station);
+              {routes.length > 0 && (() => {
+                // routes를 normalizeRoute로 변환
+                const normalizedRoutes = routes.map((route, index) => normalizeRoute(route, index));
+                
+                return (
+                  <div className="space-y-6 mt-6">
+                    {normalizedRoutes.map((routeSummary, routeIndex) => {
+                      const isExpanded = expandedRouteIndex === routeIndex;
+                      const isOptimal = routeIndex === 0;
+                      const { subPaths, stations, totalMinutes, fare, transfers } = routeSummary;
+                      
+                      // 디버깅 로그
+                      console.log('[UI-ROUTE-CARD] route prop', {
+                        routeIndex,
+                        subPathsLength: subPaths?.length,
+                        subPaths: subPaths?.map(sp => ({
+                          type: sp.type,
+                          label: sp.label,
+                          from: sp.from,
+                          to: sp.to,
+                          minutes: sp.minutes,
+                        })),
+                        stationsLength: stations?.length,
                       });
                       
-                      if (sectionSegments.length > 0) {
-                        const totalTime = sectionSegments.reduce((sum: number, seg: any) => {
-                          const segTime = Number(seg.durationMinutes ?? seg.travelTime ?? 0);
-                          return sum + (Number.isFinite(segTime) && segTime > 0 ? segTime : 0);
-                        }, 0);
-                        return totalTime > 0 ? totalTime : null; // 시간 정보가 있으면 반환, 없으면 null
-                      }
-                      
-                      // segments에서 찾지 못하면 null 반환 (표시하지 않음)
-                      return null;
-                    };
-                    
-                    return (
-                      <div key={routeIndex} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                        {/* 경로 헤더 */}
-                        <div 
-                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
-                        onClick={() => setExpandedRouteIndex(isExpanded ? null : routeIndex)}
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          {isOptimal && (
-                            <span className="text-xs font-bold px-2 py-1 bg-blue-500 text-white rounded flex-shrink-0">
-                              최적
-                            </span>
-                          )}
-                          <div className="text-lg font-bold text-gray-900 dark:text-white">
-                            {(() => {
-                              // route 전체 시간: ODsay info.totalTime 사용
-                              const timeNum = Number(routeTotalTime);
-                              return Number.isFinite(timeNum) && timeNum > 0 ? `${timeNum}분` : '–';
-                            })()}
+                      return (
+                        <div key={routeIndex} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-6 first:mt-0">
+                          {/* 경로 헤더 */}
+                          <div 
+                            className="flex items-center justify-between py-4 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+                            onClick={() => setExpandedRouteIndex(isExpanded ? null : routeIndex)}
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {isOptimal && (
+                                <span className="text-xs font-bold px-2 py-1 bg-blue-500 text-white rounded flex-shrink-0">
+                                  최적
+                                </span>
+                              )}
+                              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                {totalMinutes != null ? `${totalMinutes}분` : '–'}
+                              </div>
+                              <div className="text-base text-gray-600 dark:text-gray-400">
+                                {fare != null ? `${fare.toLocaleString()}원` : ''}
+                              </div>
+                              {transfers > 0 && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  환승 {transfers}회
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* 펼치기/접기 아이콘 */}
+                            <div className="text-gray-400 flex-shrink-0">
+                              {isExpanded ? '▲' : '▼'}
+                            </div>
                           </div>
-                          <div className="text-base text-gray-600 dark:text-gray-400">
-                            {route.fare.toLocaleString()}원
-                          </div>
-                          {route.transferCount > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              환승 {route.transferCount}회
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* 구간별 시간 막대 그래프 - 제거됨 (중복 표시 방지) */}
-                        
-                        {/* 펼치기/접기 아이콘 */}
-                        <div className="text-gray-400 flex-shrink-0">
-                          {isExpanded ? '▲' : '▼'}
-                        </div>
-                      </div>
-                      
-                      {/* 확장된 경로 상세 */}
-                      {isExpanded && (
-                        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4">
-                          <div className="space-y-3">
-                            {sections.map((section, sectionIndex) => {
-                              const lineColor = LINE_COLORS[section.line as keyof typeof LINE_COLORS] || getLineColor(section.line);
-                              // 실제 시간 정보 가져오기 (없으면 null)
-                              const sectionTime = getSectionTime(section);
-                              const sectionExpanded = expandedSections.has(sectionIndex);
-                              
-                              return (
-                                <div key={sectionIndex} className="flex items-start gap-3">
-                                  {/* 노선 색상 아이콘 */}
-                                  <div 
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                                    style={{ backgroundColor: lineColor }}
-                                  >
-                                    {section.line}
-                                  </div>
-                                  
-                                  {/* 구간 정보 */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                        {section.startStation}
-                                      </span>
-                                      {section.stations.length > 1 && (
-                                        <>
-                                          <ArrowRight className="w-4 h-4 text-gray-400" />
-                                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                            {section.transferStation ? section.transferStation : section.endStation}
+                          
+                          {/* 확장된 경로 상세 - subPaths 기반 */}
+                          {isExpanded && (
+                            <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 py-4 px-4">
+                              <div className="space-y-4">
+                                {subPaths && subPaths.length > 0 ? (
+                                  subPaths.map((sp, idx) => {
+                                    if (sp.type === 'walk') {
+                                      return (
+                                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded text-xs">도보</span>
+                                          <span>{sp.minutes != null ? `${sp.minutes}분` : ''}</span>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    if (sp.type === 'bus') {
+                                      return (
+                                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded text-xs">
+                                            {sp.label || '버스'}
                                           </span>
-                                          {section.transferStation && (
-                                            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                              (환승)
-                                            </span>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
+                                          <span>{sp.minutes != null ? `${sp.minutes}분` : ''}</span>
+                                        </div>
+                                      );
+                                    }
                                     
-                                    {/* 역 목록 (펼쳐진 경우) */}
-                                    {sectionExpanded && (
-                                      <div className="mt-2 space-y-1 pl-2 border-l-2" style={{ borderColor: lineColor }}>
-                                        {section.stations.map((station: string, stationIdx: number) => {
-                                          const stationCongestion = route.stationCongestions?.find(
-                                            (sc: any) => sc.station === station
-                                          ) || { congestion: '보통', level: 2 };
-                                          
-                                          const congestionColor = getCongestionColor(stationCongestion.level);
-                                          const isFirst = stationIdx === 0;
-                                          const isLast = stationIdx === section.stations.length - 1;
-                                          
-                                          return (
-                                            <div
-                                              key={stationIdx}
-                                              className="flex items-center gap-2 py-1 cursor-pointer hover:bg-white dark:hover:bg-gray-800 rounded px-2"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const stationData = getStationByName(station);
-                                                const stationLines = stationData?.lines || [section.line];
-                                                setSelectedStationDetail({ station, lines: stationLines.map(l => l.toString()) });
-                                              }}
-                                            >
-                                              <div
-                                                className="w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                                style={{ 
-                                                  backgroundColor: isFirst ? '#10B981' : isLast ? '#EF4444' : congestionColor 
-                                                }}
-                                              >
-                                                {isFirst ? '출' : isLast ? '도' : stationIdx}
+                                    if (sp.type === 'subway') {
+                                      const lineLabel = sp.label || '';
+                                      const lineNum = lineLabel.replace('호선', '').trim();
+                                      const lineColor = getLineColor(lineNum);
+                                      
+                                      // 환승/하차 여부 계산 (stations 배열에서 start/transfer/end만 참고)
+                                      const transferStations = (stations || []).filter(s => s.type === 'transfer');
+                                      const endStation = (stations || []).find(s => s.type === 'end');
+                                      
+                                      const isLast = idx === subPaths.length - 1;
+                                      const isTransferEnd = transferStations.some(ts => ts.name === sp.to);
+                                      const isFinalEnd = endStation && endStation.name === sp.to;
+                                      
+                                      const statusText = isTransferEnd
+                                        ? ' (환승)'
+                                        : isFinalEnd && isLast
+                                        ? ' (하차)'
+                                        : '';
+                                      
+                                      const routeText = `${sp.from} → ${sp.to}`;
+                                      
+                                      return (
+                                        <div key={idx} className="flex items-center gap-3 text-sm">
+                                          <div
+                                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                            style={{ backgroundColor: lineColor }}
+                                          >
+                                            {lineNum}
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                              <div className="text-gray-900 dark:text-white font-medium flex-1">
+                                                <span className="font-semibold">{lineLabel}</span>
+                                                <span className="mx-2">•</span>
+                                                <span>{routeText}</span>
+                                                {statusText && (
+                                                  <span className="text-blue-600 dark:text-blue-400 ml-1">{statusText}</span>
+                                                )}
                                               </div>
-                                              <span className="text-xs text-gray-700 dark:text-gray-300">
-                                                {station}
-                                              </span>
-                                              <span 
-                                                className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                                                style={{ 
-                                                  backgroundColor: `${congestionColor}20`,
-                                                  color: congestionColor
-                                                }}
-                                              >
-                                                {stationCongestion.congestion}
-                                              </span>
+                                              {sp.minutes != null && (
+                                                <div className="text-gray-600 dark:text-gray-400 text-xs ml-2">
+                                                  {sp.minutes}분
+                                                </div>
+                                              )}
                                             </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
+                                          </div>
+                                        </div>
+                                      );
+                                    }
                                     
-                                    {/* 구간 펼치기 버튼 */}
-                                    {section.stations.length > 2 && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const newExpanded = new Set(expandedSections);
-                                          if (expandedSections.has(sectionIndex)) {
-                                            newExpanded.delete(sectionIndex);
-                                          } else {
-                                            newExpanded.add(sectionIndex);
-                                          }
-                                          setExpandedSections(newExpanded);
-                                        }}
-                                        className="text-xs text-blue-600 dark:text-blue-400 mt-1 hover:underline"
-                                      >
-                                        {sectionExpanded ? '접기' : `${section.stations.length}개 역 보기`}
-                                      </button>
-                                    )}
+                                    return null;
+                                  })
+                                ) : (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    구간 정보가 없습니다. (subPaths: {subPaths?.length || 0}개)
                                   </div>
-                                  
-                                  {/* 시간 정보 제거 (요구사항에 따라) */}
-                                </div>
-                              );
-                            })}
-                          </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {routes.length === 0 && !routeLoading && (
                 <div className="text-center py-8">
@@ -1253,11 +1100,11 @@ export default function HomePage() {
                 onClick={() => setSelectedStationDetail(null)}
               >
                 <div 
-                  className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-2xl max-h-[80vh] overflow-y-auto"
+                  className="bg-white dark:bg-gray-800 rounded-2xl py-4 px-4 max-w-md w-full shadow-2xl max-h-[80vh] overflow-y-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                       {selectedStationDetail.station}
                     </h3>
                     <button
@@ -1268,8 +1115,8 @@ export default function HomePage() {
                     </button>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <div className="space-y-6">
+                    <div className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-3">
                       노선별 혼잡도
                     </div>
                     
@@ -1285,7 +1132,7 @@ export default function HomePage() {
                       const congestionText = getCongestionText(stationCongestion.level);
                       
                       return (
-                        <div key={line} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <div key={line} className="py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                           <div className="flex items-center gap-3 mb-3">
                             <div 
                               className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md"
@@ -1303,8 +1150,8 @@ export default function HomePage() {
                             </div>
                           </div>
                           
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between py-3 px-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                               <span className="text-sm text-gray-600 dark:text-gray-400">현재 혼잡도</span>
                               <div className="flex items-center gap-2">
                                 <div
@@ -1322,7 +1169,7 @@ export default function HomePage() {
                               </div>
                             </div>
                             
-                            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div className="flex items-center justify-between py-3 px-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                               <span className="text-sm text-blue-600 dark:text-blue-400">다음 열차 도착</span>
                               <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
                                 약 {random.randomInt(2, 4)}분

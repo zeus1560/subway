@@ -138,8 +138,8 @@ export default function ComparisonPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">시간대별 비교</h1>
+        <div className="container mx-auto px-6 py-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">시간대별 비교</h1>
           
           {/* 역 선택 */}
           <div className="relative station-selector">
@@ -196,15 +196,15 @@ export default function ComparisonPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">데이터를 불러오는 중...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">데이터를 불러오는 중...</p>
           </div>
         ) : (
           <>
             {/* 현재 시간 표시 */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4 mb-6 first:mt-0 mt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <Clock className="w-5 h-5" />
@@ -219,8 +219,8 @@ export default function ComparisonPage() {
             </div>
 
         {/* 비교 카드 */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        <div className="grid grid-cols-2 gap-4 mb-6 mt-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">지금 출발</div>
             <div className="flex items-center gap-2 mb-3">
               <div
@@ -238,7 +238,7 @@ export default function ComparisonPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">10분 후 출발</div>
             <div className="flex items-center gap-2 mb-3">
               <div
@@ -259,30 +259,30 @@ export default function ComparisonPage() {
 
         {/* 추천 */}
         {isBetter ? (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg py-4 px-4 mb-6 mt-6">
             <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
               <TrendingDown className="w-5 h-5" />
-              <span className="font-semibold">10분 후 출발을 추천합니다</span>
+              <span className="text-base font-semibold">10분 후 출발을 추천합니다</span>
             </div>
-            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+            <p className="text-sm text-green-600 dark:text-green-400 mt-2">
               혼잡도가 {Math.round(currentPassengers - futurePassengers)}명 감소할 예정입니다.
             </p>
           </div>
         ) : (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg py-4 px-4 mb-6 mt-6">
             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
               <TrendingUp className="w-5 h-5" />
-              <span className="font-semibold">지금 출발을 추천합니다</span>
+              <span className="text-base font-semibold">지금 출발을 추천합니다</span>
             </div>
-            <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+            <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
               혼잡도가 증가할 예정입니다.
             </p>
           </div>
         )}
 
         {/* 비교 차트 */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 mb-6 mt-6">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
             시간대별 혼잡도 비교
           </h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -303,8 +303,8 @@ export default function ComparisonPage() {
         </div>
 
         {/* 시간대별 추이 */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 mt-6">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
             하루 종일 혼잡도 추이
           </h2>
           <ResponsiveContainer width="100%" height={300}>

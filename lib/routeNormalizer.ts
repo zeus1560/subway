@@ -110,205 +110,204 @@ function buildSummarySubPaths(rawSubPath: any[]): SubPathSummary[] {
 }
 
 /**
- * perSegment 기반으로 요약용 subPaths 생성 (fallback)
+ * perSegment 기반으로 요약용 subPaths 생성
+ * 라인 단위로 묶어서 반환 (연속된 같은 라인 구간을 하나로 합침)
  */
 function buildSummarySubPathsFromSegments(segments: any[]): SubPathSummary[] {
   if (!Array.isArray(segments) || segments.length === 0) {
     return [];
   }
 
-  let totalWalk = 0;
-  const transitSegments: SubPathSummary[] = [];
+  const result: SubPathSummary[] = [];
+  let current: SubPathSummary | null = null;
 
-  segments.forEach((seg: any) => {
+  for (const seg of segments) {
     if (!seg || typeof seg !== 'object') {
-      return;
+      continue;
+    }
+
+    // 환승 구간은 건너뛰기 (isTransfer가 true인 경우)
+    if (seg.isTransfer === true) {
+      continue;
     }
 
     const minutes = safeMinutes(seg.durationMinutes ?? seg.travelTime ?? seg.minutes ?? seg.segmentMinutes);
-    const stationCount = typeof seg.stationCount === 'number' ? seg.stationCount : undefined;
     const rawLine = seg.line;
     
-    // line 필드가 숫자일 수도 있고 문자열일 수도 있음
-    // 예: "5", "5호선", "1", "2" 등
-    let lineStr = '';
+    // line 필드 처리 및 정규화
+    let normalizedLine: string = '';
     if (rawLine != null) {
       if (typeof rawLine === 'number') {
-        lineStr = String(rawLine);
+        normalizedLine = String(rawLine);
       } else if (typeof rawLine === 'string') {
-        lineStr = rawLine.trim();
+        // "5", "5호선", "지하철 5호선" 등 다양한 형식 처리
+        normalizedLine = rawLine.replace(/호선/g, '').replace(/[^0-9]/g, '').trim();
       } else {
-        lineStr = String(rawLine).trim();
+        normalizedLine = String(rawLine).replace(/호선/g, '').replace(/[^0-9]/g, '').trim();
       }
     }
     
-    // 디버깅: line 값 확인
-    if (process.env.NODE_ENV === 'development' && segments.indexOf(seg) < 3) {
-      console.log('[buildSummarySubPathsFromSegments] seg:', { 
-        rawLine, 
-        lineStr, 
-        from: seg.from, 
-        to: seg.to,
-        minutes,
-        stationCount
-      });
+    // 도보 구간은 별도 처리 (현재는 지하철만 처리)
+    if (normalizedLine === '' || rawLine === '도보' || rawLine === 'undefined' || rawLine === 'null') {
+      continue;
     }
     
-    if (lineStr === '도보' || lineStr === '' || lineStr === 'undefined' || lineStr === 'null') {
-      // 도보: 합산
-      if (minutes != null) {
-        totalWalk += minutes;
+    // 노선 번호로 label 생성
+    const label = normalizedLine.length > 0 ? `${normalizedLine}호선` : "지하철";
+    
+    // 같은 라인인지 확인 (normalizedLine으로 비교)
+    const currentLine: string = current ? (() => {
+      const currentLabel = current.label || '';
+      return currentLabel.replace(/호선/g, '').replace(/[^0-9]/g, '').trim();
+    })() : '';
+    
+    if (current && currentLine === normalizedLine && current.type === 'subway') {
+      // 같은 라인 계속 - 구간 확장
+      current.to = seg.to;
+      const a = current.minutes ?? 0;
+      const b = minutes ?? 0;
+      current.minutes = Number.isFinite(a + b) && (a + b) > 0 ? a + b : current.minutes;
+      
+      // 정거장 수 합산
+      if (typeof seg.stationCount === 'number') {
+        current.stationCount = (current.stationCount ?? 0) + seg.stationCount;
       }
-      return;
-    }
-    
-    let type: "walk" | "subway" | "bus";
-    let label: string;
-    
-    if (lineStr.toLowerCase().includes('버스') || lineStr.toLowerCase().startsWith('bus')) {
-      type = "bus";
-      label = lineStr.includes('버스') ? lineStr : `버스 ${lineStr}`;
+      
+      // stations 배열은 생성하지 않음 (from → to만 표시하기 위해)
     } else {
-      type = "subway";
-      // 노선 번호 추출 (예: "5" -> "5호선", "5호선" -> "5호선", "1" -> "1호선")
-      const lineNum = lineStr.replace(/호선/g, '').replace(/[^0-9]/g, '').trim();
-      if (lineNum.length > 0) {
-        label = `${lineNum}호선`;
-      } else {
-        // 숫자가 없으면 원본 문자열 사용 (이미 "5호선" 형식일 수 있음)
-        label = lineStr.length > 0 ? lineStr : "지하철";
+      // 이전 subPath 종료
+      if (current) {
+        result.push(current);
       }
-    }
-    
-    // label이 비어있지 않은 경우에만 추가
-    if (label && label.length > 0 && label !== "지하철") {
-      transitSegments.push({
-        type,
+      
+      // 새 subPath 시작
+      current = {
+        type: "subway",
         label,
         minutes,
-        stationCount, // 정거장 수 포함
-      });
+        stationCount: typeof seg.stationCount === 'number' ? seg.stationCount : undefined,
+        from: seg.from,
+        to: seg.to,
+        // stations 배열은 생성하지 않음 (from → to만 표시하기 위해)
+        line: normalizedLine || undefined,
+      };
     }
-  });
-
-  const result: SubPathSummary[] = [];
-
-  // 도보 합산이 있으면 제일 앞에 추가
-  if (totalWalk > 0) {
-    result.push({
-      type: "walk",
-      label: "도보",
-      minutes: totalWalk,
-    });
   }
 
-  // 같은 label이 연속으로 나오면 합치기
-  transitSegments.forEach((seg) => {
-    // label이 비어있으면 스킵
-    if (!seg.label || seg.label.trim().length === 0) {
-      return;
-    }
-
-    const last = result[result.length - 1];
-    if (last && last.type === seg.type && last.label === seg.label) {
-      // 같은 타입, 같은 label이면 시간과 정거장 수 합산
-      const a = last.minutes ?? 0;
-      const b = seg.minutes ?? 0;
-      const sum = a + b;
-      last.minutes = Number.isFinite(sum) && sum > 0 ? sum : last.minutes;
-      
-      // 정거장 수도 합산
-      if (seg.stationCount != null) {
-        last.stationCount = (last.stationCount ?? 0) + seg.stationCount;
-      }
-    } else {
-      result.push(seg);
-    }
-  });
+  // 마지막 subPath 추가
+  if (current) {
+    result.push(current);
+  }
 
   return result;
 }
 
 /**
- * RouteResult를 RouteSummary로 정규화
- * 
- * 이 함수가 유일하게 subPaths를 생성하는 곳입니다.
- * 다른 곳에서는 subPaths를 생성하거나 수정하지 않습니다.
+ * 라인 번호 정규화 헬퍼 함수
  */
-export function normalizeRoute(raw: RouteResult, index: number): RouteSummary {
-  // 총 소요 시간
-  const totalMinutes = safeMinutes(raw.totalTravelMinutes ?? raw.travelTime);
-  
-  // 요금
-  const fare = safeFare(raw.fare);
-  
-  // 환승 횟수
-  const transfers = typeof raw.transfers === 'number' && raw.transfers >= 0 ? raw.transfers : 0;
-  
-  // perSegment는 역 리스트 추출에도 사용되므로 미리 선언
-  const segments = raw.detail?.perSegment || [];
-  
-  // ★ subPaths 생성: rawSubPath 우선 사용, 없으면 perSegment 기반
-  // 이 부분이 유일한 subPaths 생성 지점입니다.
-  let subPaths: SubPathSummary[] = [];
-  
-  // 네이버 API 원본 subPath가 있으면 사용
-  if (raw.rawSubPath && Array.isArray(raw.rawSubPath) && raw.rawSubPath.length > 0) {
-    subPaths = buildSummarySubPaths(raw.rawSubPath);
-  } else {
-    // fallback: perSegment 기반
-    subPaths = buildSummarySubPathsFromSegments(segments);
+function normalizeLineId(line: any): string {
+  if (line == null) return '';
+  if (typeof line === 'number') {
+    return String(line);
   }
-  
-  // 디버깅: subPaths 생성 결과 확인
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[normalizeRoute] subPaths 생성됨:', JSON.stringify(subPaths, null, 2));
-    console.log('[normalizeRoute] segments 샘플:', segments.slice(0, 3).map(s => ({ line: s.line, from: s.from, to: s.to })));
+  if (typeof line === 'string') {
+    return line.replace(/호선/g, '').replace(/[^0-9]/g, '').trim();
   }
-  
-  
-  // 간결한 역 리스트 생성 (출발역, 환승역, 도착역만)
-  // raw.stations가 이미 간결화되어 있으면 그대로 사용
+  return String(line).replace(/호선/g, '').replace(/[^0-9]/g, '').trim();
+}
+
+/**
+ * perSegment 기반으로 역 리스트 생성
+ * 출발역, 모든 환승역, 도착역을 포함
+ */
+function buildSummaryStationsFromSegments(segments: any[]): StationInfo[] {
+  if (!Array.isArray(segments) || segments.length === 0) {
+    return [];
+  }
+
   const stations: StationInfo[] = [];
-  
-  if (raw.stations && Array.isArray(raw.stations) && raw.stations.length > 0) {
-    // 이미 간결화된 역 리스트 사용
-    raw.stations.forEach((stationName: string) => {
-      if (stationName) {
-        stations.push({ name: stationName });
-      }
+  const first = segments[0];
+  const last = segments[segments.length - 1];
+
+  // 1) 출발역
+  if (first && first.from) {
+    const lineNum = normalizeLineId(first.line);
+    
+    stations.push({
+      name: first.from,
+      line: lineNum || undefined,
+      type: 'start',
     });
-  } else {
-    // fallback: perSegment에서 출발역, 환승역, 도착역만 추출
-    if (segments.length > 0) {
-      // 출발역
-      if (segments[0].from) {
-        stations.push({ name: segments[0].from });
-      }
+  }
+
+  // 2) 환승역들
+  for (let i = 0; i < segments.length - 1; i++) {
+    const cur = segments[i];
+    const next = segments[i + 1];
+
+    if (!cur || !next) continue;
+
+    // 라인이 다르면 환승역
+    const curLineNormalized = normalizeLineId(cur.line);
+    const nextLineNormalized = normalizeLineId(next.line);
+
+    // 라인이 다르고, cur.to와 next.from이 같은 역이면 환승역
+    if (curLineNormalized !== nextLineNormalized && cur.to === next.from && cur.to) {
+      const transferName = cur.to; // or next.from (둘은 같아야 함)
       
-      // 환승역만 추가
-      for (let i = 0; i < segments.length - 1; i++) {
-        const current = segments[i];
-        const next = segments[i + 1];
-        
-        if (current.to === next.from && current.to) {
-          const exists = stations.some(s => s.name === current.to);
-          if (!exists) {
-            stations.push({ name: current.to });
-          }
-        }
-      }
-      
-      // 도착역
-      const lastSegment = segments[segments.length - 1];
-      if (lastSegment.to) {
-        const exists = stations.some(s => s.name === lastSegment.to);
-        if (!exists) {
-          stations.push({ name: lastSegment.to });
-        }
+      // 중복 방지 (name + line 기준)
+      const exists = stations.some(s => s.name === transferName && s.line === nextLineNormalized);
+      if (!exists) {
+        stations.push({
+          name: transferName,
+          line: nextLineNormalized || undefined, // 환승 후 라인 기준
+          type: 'transfer',
+        });
       }
     }
   }
+
+  // 3) 도착역
+  if (last && last.to) {
+    const lineNum = normalizeLineId(last.line);
+    const exists = stations.some(s => s.name === last.to && s.line === lineNum);
+    if (!exists) {
+      stations.push({
+        name: last.to,
+        line: lineNum || undefined,
+        type: 'end',
+      });
+    }
+  }
+
+  return stations;
+}
+
+/**
+ * RouteResult를 RouteSummary로 정규화
+ * 
+ * 이제는 perSegment만 사용합니다. rawSubPath는 더 이상 사용하지 않습니다.
+ * 새로운 routeAlgorithm.ts 기반 경로 탐색 결과를 처리합니다.
+ */
+export function normalizeRoute(raw: RouteResult, index: number): RouteSummary {
+  // 총 소요 시간: RouteResult의 필드 직접 사용
+  const totalMinutes = safeMinutes(raw.totalTravelMinutes ?? raw.travelTime);
+  
+  // 요금: RouteResult의 필드 직접 사용
+  const fare = safeFare(raw.fare);
+  
+  // 환승 횟수: RouteResult의 필드 직접 사용
+  const transfers = typeof raw.transfers === 'number' && raw.transfers >= 0 ? raw.transfers : 0;
+  
+  // perSegment를 유일한 데이터 소스로 사용
+  const segments = raw.detail?.perSegment || [];
+  
+  // ★ subPaths 생성: perSegment 기반으로만 생성
+  // rawSubPath는 더 이상 사용하지 않음 (옛날 네이버 API용)
+  const subPaths: SubPathSummary[] = buildSummarySubPathsFromSegments(segments);
+  
+  // ★ stations 생성: perSegment 기반으로 출발역, 환승역, 도착역 추출
+  const stations: StationInfo[] = buildSummaryStationsFromSegments(segments);
   
   // ID: naver-${index} 형식 사용
   const id = `naver-${index}`;
@@ -319,8 +318,8 @@ export function normalizeRoute(raw: RouteResult, index: number): RouteSummary {
     Number.isFinite(raw.congestionScore) && raw.congestionScore >= 0
     ? raw.congestionScore
     : undefined;
-  
-  return {
+
+  const summary = {
     id,
     totalMinutes,
     fare,
@@ -330,5 +329,24 @@ export function normalizeRoute(raw: RouteResult, index: number): RouteSummary {
     subPaths,
     stations,
   };
+
+  // 디버그 로그: normalizeRoute 결과 확인
+  console.debug('[normalizeRoute] result', {
+    totalMinutes: summary.totalMinutes,
+    subPathsLength: summary.subPaths?.length || 0,
+    stationsLength: summary.stations?.length || 0,
+    subPaths: summary.subPaths?.map(sp => ({
+      type: sp.type,
+      label: sp.label,
+      from: sp.from,
+      to: sp.to,
+      minutes: sp.minutes,
+      stations: sp.stations,
+      stationsCount: sp.stations?.length || 0,
+    })),
+    stations: summary.stations,
+  });
+
+  return summary;
 }
 

@@ -60,10 +60,10 @@ export default function CompanyDashboardPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center gap-3 mb-2">
             <Building2 className="w-6 h-6 text-blue-500" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">기업 대시보드</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">기업 대시보드</h1>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             직원 통근 데이터 기반 최적화 인사이트
@@ -71,10 +71,10 @@ export default function CompanyDashboardPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         {/* 통계 카드 */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="grid grid-cols-2 gap-4 mb-6 first:mt-0 mt-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-5 h-5 text-blue-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">직원 수</span>
@@ -82,7 +82,7 @@ export default function CompanyDashboardPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white">100명</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-5 h-5 text-green-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">평균 통근 시간</span>
@@ -90,7 +90,7 @@ export default function CompanyDashboardPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white">50분</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-5 h-5 text-orange-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">시간 절약</span>
@@ -98,7 +98,7 @@ export default function CompanyDashboardPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white">20분/일</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-4 px-4">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="w-5 h-5 text-purple-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">비용 절감</span>
@@ -109,9 +109,9 @@ export default function CompanyDashboardPage() {
 
         {/* 최적화 제안서 */}
         {proposal && (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-4 px-4 mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                 {proposal.title}
               </h2>
               <button

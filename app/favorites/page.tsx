@@ -54,9 +54,9 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">즐겨찾기</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">즐겨찾기</h1>
             <button
               onClick={() => router.push('/stations')}
               className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
@@ -67,11 +67,11 @@ export default function FavoritesPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-6">
         {favorites.length === 0 ? (
           <div className="text-center py-12">
             <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 mb-6">즐겨찾기 역이 없습니다.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">즐겨찾기 역이 없습니다.</p>
             <button
               onClick={() => router.push('/stations')}
               className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
@@ -80,8 +80,9 @@ export default function FavoritesPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {favorites.map((fav: any, index: number) => {
+              const isFirst = index === 0;
               const data = stationData[`${fav.stationName}_${fav.lineNum}`];
               const passengerCount = data?.CardSubwayStatsNew?.row?.[0]?.RIDE_PASGR_NUM || 500;
               const predictedData = predictCongestion(
@@ -90,7 +91,7 @@ export default function FavoritesPage() {
               );
 
               return (
-                <div key={index} className="relative">
+                <div key={index} className={`relative ${isFirst ? 'first:mt-0' : 'mt-6'}`}>
                   <CongestionCard
                     station={fav.stationName}
                     line={fav.lineNum}
