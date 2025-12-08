@@ -216,8 +216,11 @@ async function analyzePostWithAI(post: BoardPost): Promise<{
     if (post.stationName && !tags.includes(post.stationName)) {
       tags.push(post.stationName);
     }
-    if (post.lineNum && !tags.some(t => t.includes(post.lineNum))) {
-      tags.push(`${post.lineNum}호선`);
+    if (post.lineNum) {
+      const lineNum = post.lineNum;
+      if (!tags.some(t => t.includes(lineNum))) {
+        tags.push(`${lineNum}호선`);
+      }
     }
 
     return {
