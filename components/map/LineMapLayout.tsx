@@ -23,21 +23,10 @@ export default function LineMapLayout({ initialLine = '1', initialStation = null
 
   const handleStationSelect = (station: Station) => {
     setSelectedStation(station);
-    // 역 선택 시 해당 역의 노선으로 변경
-    if (station.lines.length > 0 && station.lines[0] !== selectedLine) {
-      setSelectedLine(station.lines[0] as LineId);
-    }
   };
 
   const handleLineChange = (line: LineId) => {
     setSelectedLine(line);
-    // 노선 변경 시 첫 번째 역 선택
-    const lineStations = getStationsByLine(line);
-    if (lineStations.length > 0) {
-      setSelectedStation(lineStations[0]);
-    } else {
-      setSelectedStation(null);
-    }
   };
 
   const handleZoomIn = () => {
@@ -66,12 +55,9 @@ export default function LineMapLayout({ initialLine = '1', initialStation = null
 
         {/* 지도 영역: 화면 크기에 맞게 표시 */}
         <div className="flex-1 relative min-h-[300px] overflow-hidden">
-          <LineMapCanvas
-            selectedLine={selectedLine}
-            selectedStation={selectedStation}
-            onStationSelect={handleStationSelect}
-            onLineChange={handleLineChange}
-          />
+        <LineMapCanvas
+          selectedLine={selectedLine}
+        />
           
           {/* 줌 컨트롤 - 버튼은 클릭 가능하도록 유지 */}
           <MapZoomControls

@@ -22,7 +22,6 @@ import { useRouteSearch } from '@/hooks/useRouteSearch';
 import { normalizeRoute } from '@/lib/routeNormalizer';
 import { logger } from '@/lib/logger';
 import { random } from '@/lib/random';
-import { dumpNeighborsByName } from '@/lib/graph/debugGraph';
 import type { RouteSummary } from '@/types/route';
 
 
@@ -99,30 +98,6 @@ export default function HomePage() {
     setNotificationsEnabled(notificationSettings.enabled);
     
     loadWeatherAndEvents();
-
-    // 🔍 디버그: 그래프 구조 확인 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('\n🔍 [디버그] 그래프 구조 확인 시작...');
-      
-      // 5호선 출발 쪽
-      dumpNeighborsByName('방화');
-      dumpNeighborsByName('개화산');
-      dumpNeighborsByName('김포공항');
-
-      // 5→2 환승 핵심 구간
-      dumpNeighborsByName('까치산');
-      dumpNeighborsByName('영등포구청');
-
-      // 5→9 환승 핵심 구간
-      dumpNeighborsByName('여의도');
-
-      // 도착역들
-      dumpNeighborsByName('강남');
-      dumpNeighborsByName('신논현');
-      dumpNeighborsByName('서울역');
-      
-      console.log('\n✅ [디버그] 그래프 구조 확인 완료\n');
-    }
     getCurrentLocation();
 
     // 로그인 상태 변경 이벤트 리스너 추가
@@ -944,20 +919,6 @@ export default function HomePage() {
                       const isExpanded = expandedRouteIndex === routeIndex;
                       const isOptimal = routeIndex === 0;
                       const { subPaths, stations, totalMinutes, fare, transfers } = routeSummary;
-                      
-                      // 디버깅 로그
-                      console.log('[UI-ROUTE-CARD] route prop', {
-                        routeIndex,
-                        subPathsLength: subPaths?.length,
-                        subPaths: subPaths?.map(sp => ({
-                          type: sp.type,
-                          label: sp.label,
-                          from: sp.from,
-                          to: sp.to,
-                          minutes: sp.minutes,
-                        })),
-                        stationsLength: stations?.length,
-                      });
                       
                       return (
                         <div key={routeIndex} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-6 first:mt-0">
